@@ -63,23 +63,31 @@ function formatMoney(value) {
   }
 }
 
-// Show a non-blocking error message in the error banner. The banner will appear near the top of the page and not disrupt form submissions.
-function showError(message) {
-  const banner = document.getElementById('errorBanner');
+function showBanner(message, variant = 'info') {
+  const banner = document.getElementById('appBanner');
   if (!banner) {
-    console.error('Error banner element not found');
+    console.error('Banner element not found');
     return;
   }
   banner.textContent = message;
-  banner.style.display = 'block';
+  banner.classList.remove('hidden', 'banner-error', 'banner-info');
+  banner.classList.add(variant === 'error' ? 'banner-error' : 'banner-info');
+}
+
+// Show a non-blocking error message in the error banner. The banner will appear near the top of the page and not disrupt form submissions.
+function showError(message) {
+  showBanner(message, 'error');
 }
 
 // Hide the error banner
 function hideError() {
-  const banner = document.getElementById('errorBanner');
+  const banner = document.getElementById('appBanner');
   if (banner) {
-    banner.textContent = '';
-    banner.style.display = 'none';
+    if (banner.classList.contains('banner-error')) {
+      banner.textContent = '';
+      banner.classList.add('hidden');
+      banner.classList.remove('banner-error');
+    }
   }
 }
 
@@ -91,11 +99,41 @@ function driveToDirect(url) {
   return `https://drive.google.com/uc?export=download&id=${m[1]}`;
 }
 
-function ensureArray(value) {
+function normalizeArray(value) {
   if (Array.isArray(value)) return value;
-  if (!value) return [];
+  if (value == null) return [];
+  if (typeof value === 'string') return [value];
+  if (typeof value === 'object') {
+    return Object.values(value).filter((entry) => typeof entry === 'string');
+  }
+  return [];
+}
+
+function normalizeObjectArray(value) {
+  if (Array.isArray(value)) return value;
+  if (value == null) return [];
+  if (typeof value === 'string') return [value];
   if (typeof value === 'object') return Object.values(value);
   return [];
+}
+
+function normalizeColorList(value) {
+  const list = normalizeObjectArray(value);
+  return list
+    .map((entry) => {
+      if (typeof entry === 'string') {
+        return { id: entry, label: entry };
+      }
+      if (entry && typeof entry === 'object') {
+        return {
+          id: entry.id || entry.name || entry.label || '',
+          label: entry.label || entry.name || entry.id || '',
+          swatchUrl: entry.swatchUrl || entry.url || ''
+        };
+      }
+      return null;
+    })
+    .filter((item) => item && (item.id || item.label));
 }
 
 
@@ -112,23 +150,35 @@ function getCurrentScreenType() {
 
 function getFrameColorSwatchUrl(frameType, colorName) {
   const cfg = AppState.config;
-  const list = ensureArray(cfg?.frameOptions?.window);
-  const item = list.find((x) => String(x.type).trim() === String(frameType).trim());
-  const colorObj = item?.colors?.find((c) => String(c.name).trim() === String(colorName).trim());
+  const screenType = getCurrentScreenType();
+  const list = normalizeObjectArray(cfg?.frameOptions?.[screenType] || cfg?.frameOptions?.window);
+  const item = list.find(
+    (x) => String(x?.id ?? x?.label ?? '').trim() === String(frameType).trim()
+  );
+  const colors = normalizeColorList(item?.colors);
+  const colorObj = colors.find(
+    (c) => String(c.id || c.label).trim() === String(colorName).trim()
+  );
   return colorObj?.swatchUrl ? driveToDirect(colorObj.swatchUrl) : '';
 }
 
 function getMaterialColorSwatchUrl(materialType, colorName) {
   const cfg = AppState.config;
-  const list = ensureArray(cfg?.materialOptions);
-  const item = list.find((x) => String(x.type).trim() === String(materialType).trim());
-  const colorObj = item?.colors?.find((c) => String(c.name).trim() === String(colorName).trim());
+  const screenType = getCurrentScreenType();
+  const list = normalizeObjectArray(cfg?.materialOptions?.[screenType] || cfg?.materialOptions?.window);
+  const item = list.find(
+    (x) => String(x?.id ?? x?.label ?? '').trim() === String(materialType).trim()
+  );
+  const colors = normalizeColorList(item?.colors);
+  const colorObj = colors.find(
+    (c) => String(c.id || c.label).trim() === String(colorName).trim()
+  );
   return colorObj?.swatchUrl ? driveToDirect(colorObj.swatchUrl) : '';
 }
 
 function syncFrameColorSwatch() {
-  const sw = document.getElementById('frameColorSwatch');
-  const img = document.getElementById('frameColorSwatchImg');
+  const sw = document.getElementById('frameColorSwatchInline');
+  const img = document.getElementById('frameColorSwatchImgInline');
   const typeEl = document.getElementById('frameType');
   const colorEl = document.getElementById('frameColor');
   if (!colorEl) return;
@@ -148,8 +198,8 @@ function syncFrameColorSwatch() {
 }
 
 function syncMaterialColorSwatch() {
-  const sw = document.getElementById('materialColorSwatch');
-  const img = document.getElementById('materialColorSwatchImg');
+  const sw = document.getElementById('materialColorSwatchInline');
+  const img = document.getElementById('materialColorSwatchImgInline');
   const typeEl = document.getElementById('materialType');
   const colorEl = document.getElementById('materialColor');
   if (!colorEl) return;
@@ -270,7 +320,7 @@ window.addEventListener('unhandledrejection', (event) => {
 function getRetailRatePerInch(materialId, frameKey, screenType) {
   const cfg = AppState.config;
   if (!cfg) return null;
-  const list = screenType === 'door' ? ensureArray(cfg.pricingDoor) : ensureArray(cfg.pricingWindow);
+  const list = screenType === 'door' ? normalizeObjectArray(cfg.pricingDoor) : normalizeObjectArray(cfg.pricingWindow);
   const row = list.find(
     (p) => p.materialId === materialId && p.frameId === frameKey
   );
@@ -278,16 +328,29 @@ function getRetailRatePerInch(materialId, frameKey, screenType) {
 }
 
 // Config loading
+function getSafeConfig() {
+  return {
+    environment: AppState.environment,
+    stores: [],
+    frameOptions: { window: [], door: [] },
+    materialOptions: { window: [], door: [] },
+    hardwareOptions: [],
+    doorHardwareOptions: [],
+    pricingWindow: [],
+    pricingDoor: []
+  };
+}
+
 async function loadConfig() {
   try {
     // Attempt to load config from the /data directory first. If that fails, try the root.
     let resp;
     try {
-      resp = await fetch('data/config.json', { cache: 'no-cache' });
+      resp = await fetch('/data/config.json', { cache: 'no-cache' });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     } catch (innerErr) {
       // Fallback to root if /data is missing
-      resp = await fetch('config.json', { cache: 'no-cache' });
+      resp = await fetch('/config.json', { cache: 'no-cache' });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     }
     const data = await resp.json();
@@ -298,11 +361,13 @@ async function loadConfig() {
     hideError();
   } catch (err) {
     console.error('Failed to load config:', err);
-    AppState.config = null;
+    AppState.config = getSafeConfig();
     updateEnvironmentIndicator();
     // Avoid remote logging for config errors in local dev; still log to console
     // Show a non-blocking error banner
     showError('There was a problem loading configuration data. Some options may not appear correctly.');
+    populateStores();
+    populateStaticOptions();
   }
 }
 function updateEnvironmentIndicator() {
@@ -319,7 +384,7 @@ function populateStores() {
   const select = $('#storeSelect');
   if (!select) return;
   select.innerHTML = '';
-  const stores = AppState.config?.stores;
+  const stores = normalizeObjectArray(AppState.config?.stores);
   if (!Array.isArray(stores) || stores.length === 0) {
     // Show placeholder when no stores available; do not block form submission
     const opt = document.createElement('option');
@@ -346,14 +411,15 @@ function populateStores() {
 // numeric distance as a proxy when geolocation APIs are unavailable. Returns
 // the best matching store or null if none.
 function autoSelectStore(zip) {
-  if (!AppState.config || !Array.isArray(AppState.config.stores) || !zip) {
+  const stores = normalizeObjectArray(AppState.config?.stores);
+  if (!AppState.config || !stores.length || !zip) {
     return null;
   }
   // Extract only numeric digits from the ZIP code
   const zipNum = parseInt(String(zip).replace(/\D/g, ''));
   let bestStore = null;
   let minDiff = Infinity;
-  AppState.config.stores.forEach((store) => {
+  stores.forEach((store) => {
     const sZipNum = parseInt(String(store.zip).replace(/\D/g, ''));
     if (!isNaN(zipNum) && !isNaN(sZipNum)) {
       const diff = Math.abs(sZipNum - zipNum);
@@ -363,19 +429,20 @@ function autoSelectStore(zip) {
       }
     }
   });
-  return bestStore || AppState.config.stores[0] || null;
+  return bestStore || stores[0] || null;
 }
 
 // Helpers for options by screen type
 function getFrameOptionsForScreenType(screenType) {
   const cfg = AppState.config;
   if (!cfg || !cfg.frameOptions) return [];
-  return cfg.frameOptions[screenType] || [];
+  return normalizeObjectArray(cfg.frameOptions[screenType] || []);
 }
 function getMaterialOptionsForScreenType(screenType) {
   const cfg = AppState.config;
   if (!cfg || !cfg.materialOptions) return [];
-  return cfg.materialOptions[screenType] || cfg.materialOptions.window || [];
+  const fallback = cfg.materialOptions.window || [];
+  return normalizeObjectArray(cfg.materialOptions[screenType] || fallback);
 }
 function populateStaticOptions() {
   const type = getCurrentScreenType();
@@ -391,7 +458,7 @@ function updateFrameSelects(screenType) {
   const frameColorSelect = $('#frameColor');
   if (!frameTypeSelect || !frameColorSelect || !AppState.config) return;
 
-  const frames = getFrameOptionsForScreenType(screenType);
+  const frames = normalizeObjectArray(getFrameOptionsForScreenType(screenType));
   frameTypeSelect.innerHTML = '';
   frames.forEach((frame, idx) => {
     const opt = document.createElement('option');
@@ -408,12 +475,13 @@ function updateFrameColorOptions() {
   if (!frameTypeSelect || !frameColorSelect || !AppState.config) return;
 
   const type = getCurrentScreenType();
-  const frames = getFrameOptionsForScreenType(type);
+  const frames = normalizeObjectArray(getFrameOptionsForScreenType(type));
   const selectedFrameId = frameTypeSelect.value;
   const frameDef = frames.find((f) => f.id === selectedFrameId);
 
   frameColorSelect.innerHTML = '';
-  (frameDef?.colors || []).forEach((color, idx) => {
+  const colors = normalizeColorList(frameDef?.colors);
+  colors.forEach((color, idx) => {
     const opt = document.createElement('option');
     opt.value = color.id;
     opt.textContent = color.label;
@@ -422,6 +490,8 @@ function updateFrameColorOptions() {
   });
 
   updateFrameColorSwatch();
+  syncFrameColorSwatch();
+  renderFrameColorTiles();
 }
 function updateFrameColorSwatch() {
   const frameTypeSelect = $('#frameType');
@@ -442,9 +512,9 @@ function updateFrameColorSwatch() {
   }
 
   const type = getCurrentScreenType();
-  const frames = getFrameOptionsForScreenType(type);
+  const frames = normalizeObjectArray(getFrameOptionsForScreenType(type));
   const frameDef = frames.find((f) => f.id === frameTypeSelect.value);
-  const colorDef = (frameDef?.colors || []).find(
+  const colorDef = normalizeColorList(frameDef?.colors).find(
     (c) => c.id === frameColorSelect.value
   );
 
@@ -468,13 +538,63 @@ function updateFrameColorSwatch() {
     swatchContainer.classList.add('hidden');
   }
 }
+
+function renderFrameColorTiles() {
+  const container = $('#frameColorTiles');
+  const frameTypeSelect = $('#frameType');
+  const frameColorSelect = $('#frameColor');
+  if (!container || !frameTypeSelect || !frameColorSelect) return;
+
+  const type = getCurrentScreenType();
+  const frames = normalizeObjectArray(getFrameOptionsForScreenType(type));
+  const frameDef = frames.find((f) => f.id === frameTypeSelect.value);
+  const colors = normalizeColorList(frameDef?.colors);
+  container.innerHTML = '';
+  if (!colors.length) {
+    container.classList.add('hidden');
+    return;
+  }
+  container.classList.remove('hidden');
+  colors.forEach((color) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `swatch-tile${color.id === frameColorSelect.value ? ' is-selected' : ''}`;
+    btn.setAttribute('data-value', color.id);
+    btn.setAttribute('aria-pressed', color.id === frameColorSelect.value ? 'true' : 'false');
+
+    const chip = document.createElement('span');
+    chip.className = 'swatch-chip';
+    if (color.swatchUrl) {
+      const url = driveToDirect(color.swatchUrl);
+      chip.style.backgroundImage = `url("${url}")`;
+      chip.style.backgroundSize = 'cover';
+      chip.style.backgroundPosition = 'center';
+    } else {
+      chip.style.backgroundColor = String(color.label || color.id).toLowerCase();
+    }
+
+    const label = document.createElement('span');
+    label.className = 'swatch-label';
+    label.textContent = color.label || color.id;
+
+    btn.appendChild(chip);
+    btn.appendChild(label);
+    btn.addEventListener('click', () => {
+      frameColorSelect.value = color.id;
+      updateFrameColorSwatch();
+      syncFrameColorSwatch();
+      renderFrameColorTiles();
+    });
+    container.appendChild(btn);
+  });
+}
 function updateMaterialSelects(screenType) {
   const materialTypeSelect = $('#materialType');
   const materialColorSelect = $('#materialColor');
   const materialDetailsEl = $('#materialDetails');
   if (!materialTypeSelect || !materialColorSelect || !AppState.config) return;
 
-  const mats = getMaterialOptionsForScreenType(screenType);
+  const mats = normalizeObjectArray(getMaterialOptionsForScreenType(screenType));
   materialTypeSelect.innerHTML = '';
   mats.forEach((mat, idx) => {
     const opt = document.createElement('option');
@@ -500,10 +620,11 @@ function updateMaterialColorOptions() {
   if (!materialTypeSelect || !materialColorSelect || !AppState.config) return;
 
   const type = getCurrentScreenType();
-  const mats = getMaterialOptionsForScreenType(type);
+  const mats = normalizeObjectArray(getMaterialOptionsForScreenType(type));
   const matDef = mats.find((m) => m.id === materialTypeSelect.value);
   materialColorSelect.innerHTML = '';
-  (matDef?.colors || []).forEach((color, idx) => {
+  const colors = normalizeColorList(matDef?.colors);
+  colors.forEach((color, idx) => {
     const opt = document.createElement('option');
     opt.value = color.id;
     opt.textContent = color.label;
@@ -517,12 +638,64 @@ function updateMaterialColorOptions() {
       materialDetailsEl.textContent = 'Select a material to see its features.';
     }
   }
+  syncMaterialColorSwatch();
+  renderMaterialColorTiles();
+}
+
+function renderMaterialColorTiles() {
+  const container = $('#materialColorTiles');
+  const materialTypeSelect = $('#materialType');
+  const materialColorSelect = $('#materialColor');
+  if (!container || !materialTypeSelect || !materialColorSelect) return;
+
+  const type = getCurrentScreenType();
+  const mats = normalizeObjectArray(getMaterialOptionsForScreenType(type));
+  const matDef = mats.find((m) => m.id === materialTypeSelect.value);
+  const colors = normalizeColorList(matDef?.colors);
+  container.innerHTML = '';
+  if (!colors.length) {
+    container.classList.add('hidden');
+    return;
+  }
+  container.classList.remove('hidden');
+  colors.forEach((color) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `swatch-tile${color.id === materialColorSelect.value ? ' is-selected' : ''}`;
+    btn.setAttribute('data-value', color.id);
+    btn.setAttribute('aria-pressed', color.id === materialColorSelect.value ? 'true' : 'false');
+
+    const chip = document.createElement('span');
+    chip.className = 'swatch-chip';
+    if (color.swatchUrl) {
+      const url = driveToDirect(color.swatchUrl);
+      chip.style.backgroundImage = `url("${url}")`;
+      chip.style.backgroundSize = 'cover';
+      chip.style.backgroundPosition = 'center';
+    } else {
+      chip.style.backgroundColor = String(color.label || color.id).toLowerCase();
+    }
+
+    const label = document.createElement('span');
+    label.className = 'swatch-label';
+    label.textContent = color.label || color.id;
+
+    btn.appendChild(chip);
+    btn.appendChild(label);
+    btn.addEventListener('click', () => {
+      materialColorSelect.value = color.id;
+      updateMaterialColorOptions();
+      syncMaterialColorSwatch();
+      renderMaterialColorTiles();
+    });
+    container.appendChild(btn);
+  });
 }
 function populateDoorRollerOptions() {
   const select = $('#doorRollers');
   if (!select || !AppState.config) return;
   select.innerHTML = '';
-  const list = AppState.config.doorHardwareOptions || [];
+  const list = normalizeObjectArray(AppState.config.doorHardwareOptions || []);
   list.forEach((hw, idx) => {
     const opt = document.createElement('option');
     opt.value = hw.id;
@@ -535,7 +708,7 @@ function populateWindowHardwareOptions() {
   const select = $('#hardwareType');
   if (!select || !AppState.config) return;
   select.innerHTML = '';
-  (AppState.config.hardwareOptions || []).forEach((hw, idx) => {
+  normalizeObjectArray(AppState.config.hardwareOptions || []).forEach((hw, idx) => {
     const opt = document.createElement('option');
     opt.value = hw.id;
     opt.textContent = hw.label;
@@ -544,14 +717,12 @@ function populateWindowHardwareOptions() {
   });
 }
 function getHardwareDefById(id) {
-  if (!AppState.config || !Array.isArray(AppState.config.hardwareOptions))
-    return null;
-  return AppState.config.hardwareOptions.find((h) => h.id === id) || null;
+  if (!AppState.config) return null;
+  return normalizeObjectArray(AppState.config.hardwareOptions).find((h) => h.id === id) || null;
 }
 function getDoorRollerDefById(id) {
-  if (!AppState.config || !Array.isArray(AppState.config.doorHardwareOptions))
-    return null;
-  return AppState.config.doorHardwareOptions.find((h) => h.id === id) || null;
+  if (!AppState.config) return null;
+  return normalizeObjectArray(AppState.config.doorHardwareOptions).find((h) => h.id === id) || null;
 }
 
 // Update hardware image preview
@@ -657,10 +828,28 @@ function updateHardwareSummary() {
     el.textContent = 'No hardware added yet.';
     return;
   }
-  const parts = currentHardwareAssignments.map((a) => {
-    return `${a.initials || '?'} x${a.qty} on ${capitalizeFirst(a.side)}`;
+  el.innerHTML = '';
+  const list = document.createElement('div');
+  list.className = 'hardware-list';
+  currentHardwareAssignments.forEach((assignment, index) => {
+    const row = document.createElement('div');
+    row.className = 'hardware-list-item';
+    const label = document.createElement('span');
+    label.textContent = `${assignment.initials || '?'} x${assignment.qty} on ${capitalizeFirst(assignment.side)}`;
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn btn-secondary btn-xs';
+    removeBtn.textContent = 'Remove';
+    removeBtn.addEventListener('click', () => {
+      currentHardwareAssignments.splice(index, 1);
+      renderHardwareDiagram();
+      updateHardwareSummary();
+    });
+    row.appendChild(label);
+    row.appendChild(removeBtn);
+    list.appendChild(row);
   });
-  el.textContent = parts.join('; ');
+  el.appendChild(list);
 }
 function summarizeHardware(assignments) {
   if (!assignments || !assignments.length) return '';
@@ -793,10 +982,23 @@ function initEventHandlers() {
   const materialTypeEl = document.getElementById('materialType');
   const materialColorEl = document.getElementById('materialColor');
 
-  if (frameTypeEl) frameTypeEl.addEventListener('change', syncFrameColorSwatch);
-  if (frameColorEl) frameColorEl.addEventListener('change', syncFrameColorSwatch);
-  if (materialTypeEl) materialTypeEl.addEventListener('change', syncMaterialColorSwatch);
-  if (materialColorEl) materialColorEl.addEventListener('change', syncMaterialColorSwatch);
+  if (frameTypeEl) frameTypeEl.addEventListener('change', () => {
+    updateFrameColorOptions();
+    syncFrameColorSwatch();
+  });
+  if (frameColorEl) frameColorEl.addEventListener('change', () => {
+    updateFrameColorSwatch();
+    syncFrameColorSwatch();
+    renderFrameColorTiles();
+  });
+  if (materialTypeEl) materialTypeEl.addEventListener('change', () => {
+    updateMaterialColorOptions();
+    syncMaterialColorSwatch();
+  });
+  if (materialColorEl) materialColorEl.addEventListener('change', () => {
+    syncMaterialColorSwatch();
+    renderMaterialColorTiles();
+  });
 
   $('#btnGetStarted')?.addEventListener('click', () => showView('customer'));
   document.querySelectorAll('[data-nav]').forEach((btn) => {
@@ -809,7 +1011,7 @@ function initEventHandlers() {
   $('#storeSelect')?.addEventListener('change', () => {
     if (!AppState.config) return;
     const val = $('#storeSelect').value;
-    const store = AppState.config.stores.find((s) => s.id === val);
+    const store = normalizeObjectArray(AppState.config.stores).find((s) => s.id === val);
     if (store) {
       AppState.store = store;
       renderSummary();
@@ -829,10 +1031,20 @@ function initEventHandlers() {
   $('#crossbarNeeded')?.addEventListener('change', handleCrossbarChange);
   $('#frameType')?.addEventListener('change', () => {
     updateFrameColorOptions();
+    syncFrameColorSwatch();
   });
-  $('#frameColor')?.addEventListener('change', updateFrameColorSwatch);
+  $('#frameColor')?.addEventListener('change', () => {
+    updateFrameColorSwatch();
+    syncFrameColorSwatch();
+    renderFrameColorTiles();
+  });
   $('#materialType')?.addEventListener('change', () => {
     updateMaterialColorOptions();
+    syncMaterialColorSwatch();
+  });
+  $('#materialColor')?.addEventListener('change', () => {
+    syncMaterialColorSwatch();
+    renderMaterialColorTiles();
   });
   $('#btnAddHardware')?.addEventListener('click', handleAddHardware);
   $('#hardwareType')?.addEventListener('change', updateHardwareImage);
@@ -862,7 +1074,7 @@ function handleCustomerSubmit(event) {
   }
   AppState.customer = customer;
   // Auto-select nearest store based on the provided ZIP
-  if (AppState.config && Array.isArray(AppState.config.stores)) {
+  if (AppState.config && normalizeObjectArray(AppState.config.stores).length) {
     const nearest = autoSelectStore(customer.zip);
     if (nearest) {
       AppState.store = nearest;
@@ -877,8 +1089,9 @@ function handleCustomerSubmit(event) {
     }
   }
   // Fallback to first store if still not set
-  if (!AppState.store && AppState.config?.stores?.length) {
-    AppState.store = AppState.config.stores[0];
+  const availableStores = normalizeObjectArray(AppState.config?.stores);
+  if (!AppState.store && availableStores.length) {
+    AppState.store = availableStores[0];
   }
   renderSummary();
   showView('dashboard');
@@ -1041,7 +1254,7 @@ function resetScreenForm() {
 
 function resetQuote() {
   AppState.customer = null;
-  AppState.store = AppState.config?.stores?.[0] || null;
+  AppState.store = normalizeObjectArray(AppState.config?.stores)[0] || null;
   AppState.lineItems = [];
   AppState.quoteId = null;
   const ack = $('#ackMeasurements');
@@ -1052,66 +1265,71 @@ function resetQuote() {
 
 
 function renderSummary() {
-  const custEl = $('#summaryCustomer');
-  const succCustEl = $('#successCustomer');
-  const storeEl = $('#summaryStore');
-  const succStoreEl = $('#successStore');
+  try {
+    const custEl = $('#summaryCustomer');
+    const succCustEl = $('#successCustomer');
+    const storeEl = $('#summaryStore');
+    const succStoreEl = $('#successStore');
 
-  // Customer card: force clean line breaks
-  if (custEl) {
-    if (!AppState.customer) {
-      custEl.textContent = 'Not set';
-    } else {
-      const c = AppState.customer;
-      const lines = [];
-      if (c.name) lines.push(escapeHtml(c.name));
-      if (c.street) lines.push(escapeHtml(c.street));
-      // City and state on one line
-      const cityState = [escapeHtml(c.city || ''), escapeHtml(c.state || '')]
-        .filter(Boolean)
-        .join(', ');
-      if (cityState) lines.push(cityState);
-      if (c.zip) lines.push(escapeHtml(c.zip));
-      if (c.phone) lines.push(escapeHtml(formatPhone(c.phone)));
-      if (c.email) lines.push(escapeHtml(c.email));
-      custEl.innerHTML = lines.map((x) => `<div>${x}</div>`).join('');
+    // Customer card: force clean line breaks
+    if (custEl) {
+      if (!AppState.customer) {
+        custEl.textContent = 'Not set';
+      } else {
+        const c = AppState.customer;
+        const lines = [];
+        if (c.name) lines.push(escapeHtml(c.name));
+        if (c.street) lines.push(escapeHtml(c.street));
+        // City and state on one line
+        const cityState = [escapeHtml(c.city || ''), escapeHtml(c.state || '')]
+          .filter(Boolean)
+          .join(', ');
+        if (cityState) lines.push(cityState);
+        if (c.zip) lines.push(escapeHtml(c.zip));
+        if (c.phone) lines.push(escapeHtml(formatPhone(c.phone)));
+        if (c.email) lines.push(escapeHtml(c.email));
+        custEl.innerHTML = lines.map((x) => `<div>${x}</div>`).join('');
+      }
     }
-  }
-  if (succCustEl) succCustEl.innerHTML = custEl?.innerHTML || '';
+    if (succCustEl) succCustEl.innerHTML = custEl?.innerHTML || '';
 
-  // Store card: force clean line breaks
-  if (storeEl) {
-    if (!AppState.store) {
-      storeEl.textContent = 'Not set';
-    } else {
-      const s = AppState.store;
-      const lines = [];
-      if (s.name) lines.push(escapeHtml(s.name));
-      if (s.address) lines.push(escapeHtml(s.address));
-      const cityState = [escapeHtml(s.city || ''), escapeHtml(s.state || '')]
-        .filter(Boolean)
-        .join(', ');
-      if (cityState) lines.push(cityState);
-      if (s.zip) lines.push(escapeHtml(s.zip));
-      if (s.phone) lines.push(escapeHtml(formatPhone(s.phone)));
-      storeEl.innerHTML = lines.map((x) => `<div>${x}</div>`).join('');
+    // Store card: force clean line breaks
+    if (storeEl) {
+      if (!AppState.store) {
+        storeEl.textContent = 'Not set';
+      } else {
+        const s = AppState.store;
+        const lines = [];
+        if (s.name) lines.push(escapeHtml(s.name));
+        if (s.address) lines.push(escapeHtml(s.address));
+        const cityState = [escapeHtml(s.city || ''), escapeHtml(s.state || '')]
+          .filter(Boolean)
+          .join(', ');
+        if (cityState) lines.push(cityState);
+        if (s.zip) lines.push(escapeHtml(s.zip));
+        if (s.phone) lines.push(escapeHtml(formatPhone(s.phone)));
+        storeEl.innerHTML = lines.map((x) => `<div>${x}</div>`).join('');
+      }
     }
+    if (succStoreEl) succStoreEl.innerHTML = storeEl?.innerHTML || '';
+
+    const lineCount = AppState.lineItems.length;
+    const subtotal = AppState.lineItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
+    const tax = roundCurrency(subtotal * TAX_RATE);
+    const delivery = 0;
+    const total = roundCurrency(subtotal + tax + delivery);
+
+    const lineCountEl = $('#lineItemCount');
+    if (lineCountEl) setText(lineCountEl, lineCount ? `${lineCount} screen line item${lineCount === 1 ? '' : 's'}` : 'No screens added yet.');
+
+    setText($('#subtotalValue'), formatMoney(subtotal));
+    setText($('#taxValue'), formatMoney(tax));
+    setText($('#deliveryValue'), formatMoney(delivery));
+    setText($('#totalValue'), formatMoney(total));
+  } catch (err) {
+    console.error('Render summary failed:', err);
+    showError('There was a problem rendering the quote summary. You can still continue.');
   }
-  if (succStoreEl) succStoreEl.innerHTML = storeEl?.innerHTML || '';
-
-  const lineCount = AppState.lineItems.length;
-  const subtotal = AppState.lineItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
-  const tax = roundCurrency(subtotal * TAX_RATE);
-  const delivery = 0;
-  const total = roundCurrency(subtotal + tax + delivery);
-
-  const lineCountEl = $('#lineItemCount');
-  if (lineCountEl) setText(lineCountEl, lineCount ? `${lineCount} screen line item${lineCount === 1 ? '' : 's'}` : 'No screens added yet.');
-
-  setText($('#subtotalValue'), formatMoney(subtotal));
-  setText($('#taxValue'), formatMoney(tax));
-  setText($('#deliveryValue'), formatMoney(delivery));
-  setText($('#totalValue'), formatMoney(total));
 }
 
 function renderLineItems() {
@@ -1182,44 +1400,53 @@ function renderSuccessView() {
   showView('success');
 }
 function renderSuccessLineItems() {
-  const tbody = $('#successLineItemsBody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-  AppState.lineItems.forEach((item, index) => {
-    const tr = document.createElement('tr');
-    const hwSummary =
-      item.screenType === 'window'
-        ? summarizeHardware(item.hardwareAssignments || [])
-        : summarizeDoorHardware(item.doorRollers);
-    const crossbarSummary =
-      item.screenType === 'window' && item.crossbarNeeded
-        ? `${item.crossbarOrientation || ''} @ ${
-            item.crossbarDistance || ''
-          } (${item.crossbarType || ''})`
-        : item.screenType === 'door'
-        ? 'N/A'
-        : 'None';
-    const linePrice =
-      item.lineTotal != null ? `$${item.lineTotal.toFixed(2)}` : '—';
-    tr.innerHTML = `
-      <td>${index + 1}</td>
-      <td>${item.screenType === 'door' ? 'Patio Door' : 'Window'}</td>
-      <td>${item.qty}</td>
-      <td>${item.width}</td>
-      <td>${item.height}</td>
-      <td>${formatFrameSummary(item)}</td>
-      <td>${formatMaterialSummary(item)}</td>
-      <td>${crossbarSummary}</td>
-      <td>${hwSummary}</td>
-      <td>${linePrice}</td>
-    `;
-    tbody.appendChild(tr);
-  });
+  try {
+    const tbody = $('#successLineItemsBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    AppState.lineItems.forEach((item, index) => {
+      const tr = document.createElement('tr');
+      const hwSummary =
+        item.screenType === 'window'
+          ? summarizeHardware(item.hardwareAssignments || [])
+          : summarizeDoorHardware(item.doorRollers);
+      const crossbarSummary =
+        item.screenType === 'window' && item.crossbarNeeded
+          ? `${item.crossbarOrientation || ''} @ ${
+              item.crossbarDistance || ''
+            } (${item.crossbarType || ''})`
+          : item.screenType === 'door'
+          ? 'N/A'
+          : 'None';
+      const linePrice =
+        item.lineTotal != null ? `$${item.lineTotal.toFixed(2)}` : '—';
+      tr.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${item.screenType === 'door' ? 'Patio Door' : 'Window'}</td>
+        <td>${item.qty}</td>
+        <td>${item.width}</td>
+        <td>${item.height}</td>
+        <td>${formatFrameSummary(item)}</td>
+        <td>${formatMaterialSummary(item)}</td>
+        <td>${crossbarSummary}</td>
+        <td>${hwSummary}</td>
+        <td>${linePrice}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error('Render success line items failed:', err);
+    showError('There was a problem rendering the success summary. You can still continue.');
+  }
 }
 
 // Initialize application
 document.addEventListener('DOMContentLoaded', () => {
   initEventHandlers();
+  const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  if (isLocalHost) {
+    showBanner('DEV mode: remote calls disabled.', 'info');
+  }
   loadConfig();
   resetQuote();
   showScreenStep(1);

@@ -32,6 +32,16 @@ body {
   justify-content: space-between;
   gap: 1rem;
 }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
 .brand-mark {
   font-weight: 700;
   font-size: 1.25rem;
@@ -314,6 +324,24 @@ textarea {
 .hidden {
   display: none !important;
 }
+/* Banner */
+.banner {
+  max-width: 1100px;
+  margin: 0.75rem auto 0;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+}
+.banner-info {
+  background: #eef3fb;
+  color: #244163;
+  border: 1px solid #c9d9f0;
+}
+.banner-error {
+  background: #fbeaec;
+  color: #7a1d26;
+  border: 1px solid #f2c7cd;
+}
 /* Hardware diagram */
 .hardware-grid {
   display: flex;
@@ -378,6 +406,17 @@ textarea {
 }
 .hardware-list-summary {
   margin-top: 0.25rem;
+}
+.hardware-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.hardware-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 /* Image previews */
 .swatch-preview,
@@ -460,7 +499,8 @@ textarea {
 
 /* Brand logo in the red band */
 .brand-logo {
-  height: 34px;
+  height: 36px;
+  max-height: 90%;
   width: auto;
   display: block;
 }
@@ -488,6 +528,43 @@ textarea {
   border-radius: 6px;
   border: 1px solid rgba(0,0,0,0.12);
   display: none;
+}
+.swatch-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.swatch-tile {
+  border: 1px solid #d0d4da;
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.35rem 0.4rem;
+  width: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+}
+.swatch-tile.is-selected {
+  border-color: #b01c2e;
+  box-shadow: 0 0 0 2px rgba(176, 28, 46, 0.15);
+}
+.swatch-tile:focus-visible {
+  outline: 2px solid #b01c2e;
+  outline-offset: 2px;
+}
+.swatch-chip {
+  width: 36px;
+  height: 36px;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #f0f0f0;
+}
+.swatch-label {
+  font-size: 0.7rem;
+  text-align: center;
 }
 
 /* Prefer vertical stacking for form grids */
