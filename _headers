@@ -1,0 +1,6 @@
+/*
+  X-Frame-Options: ALLOWALL
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: interest-cohort=()
+  Content-Security-Policy: frame-ancestors 'self' https://helpful.place https://www.helpful.place;
+  Cache-Control: public, max-age=300

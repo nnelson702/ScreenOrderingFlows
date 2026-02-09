@@ -1,0 +1,586 @@
+{
+  "environment": "dev",
+  "stores": [
+    {
+      "id": "18228",
+      "name": "Helpful ACE - Tropicana",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip": "89121",
+      "email": "NNelson@Helpful.Vegas",
+      "address": "3145 E. Tropicana Blvd",
+      "phone": "7259773444",
+      "imageId": "1At3jAbLQqp-Z0lX5U4c3BB4JLAoqxwTN"
+    },
+    {
+      "id": "18507",
+      "name": "Helpful ACE - Horizon Ridge",
+      "city": "Henderson",
+      "state": "NV",
+      "zip": "89012",
+      "email": "ACE_18507@skyecos.com",
+      "address": "1450 W. Horizon Ridge Pkwy #420",
+      "phone": "7026022301",
+      "imageId": "1kYLaYfHYW3Rkaycw1ptyg_Xu1mVwT8fB"
+    },
+    {
+      "id": "18690",
+      "name": "Helpful ACE - Rainbow",
+      "city": "Las Vegas",
+      "state": "NV",
+      "zip": "89118",
+      "email": "ACE_18690@Skyecos.com",
+      "address": "6125 S. Rainbow Blvd #100",
+      "phone": "7029121004",
+      "imageId": "1m2k_5PRhcEudYfb3oi2t9Slp37Xhmd0N"
+    },
+    {
+      "id": "19117",
+      "name": "Helpful ACE - Green Valley",
+      "city": "Henderson",
+      "state": "NV",
+      "zip": "89014",
+      "email": "ACE_19117@Skyecos.com",
+      "address": "2255 N. Green Valley Pkwy #110",
+      "phone": "7028678566",
+      "imageId": "1h1aoHaob3SIR65gTYUaMnQap9jQFGiRx"
+    }
+  ],
+  "frameOptions": {
+    "window": [
+      {
+        "id": "5/16 x 3/4",
+        "label": "5/16 x 3/4",
+        "colors": [
+          {
+            "id": "white",
+            "label": "White",
+            "swatchUrl": "https://drive.google.com/file/d/1pJoEiE6RF4E6kRoivWDtkxNcLkXwjh_u/view?usp=sharing"
+          },
+          {
+            "id": "bronze",
+            "label": "Bronze",
+            "swatchUrl": "https://drive.google.com/file/d/1lFeejdNTcnNlEaZNryqDYG3nRxfeRziO/view?usp=sharing"
+          },
+          {
+            "id": "tan",
+            "label": "Tan",
+            "swatchUrl": "https://drive.google.com/file/d/1oFFbrPQUlFvr9TDTArZMvJ9XFwR6NPmm/view?usp=sharing"
+          },
+          {
+            "id": "champagne",
+            "label": "Champagne",
+            "swatchUrl": "https://drive.google.com/file/d/1B-PHiP3CPwgcJ-DNtEY8te2rpAZTE9qB/view?usp=sharing"
+          },
+          {
+            "id": "mill",
+            "label": "Mill",
+            "swatchUrl": "https://drive.google.com/file/d/1gwAAn0MMO_3tho9LXo0DRrcK7tz6yw8c/view?usp=sharing"
+          }
+        ]
+      },
+      {
+        "id": "3/8 x 3/4",
+        "label": "3/8 x 3/4",
+        "colors": [
+          {
+            "id": "white",
+            "label": "White",
+            "swatchUrl": "https://drive.google.com/file/d/1pJoEiE6RF4E6kRoivWDtkxNcLkXwjh_u/view?usp=sharing"
+          },
+          {
+            "id": "bronze",
+            "label": "Bronze",
+            "swatchUrl": "https://drive.google.com/file/d/1lFeejdNTcnNlEaZNryqDYG3nRxfeRziO/view?usp=sharing"
+          },
+          {
+            "id": "tan",
+            "label": "Tan",
+            "swatchUrl": "https://drive.google.com/file/d/1oFFbrPQUlFvr9TDTArZMvJ9XFwR6NPmm/view?usp=sharing"
+          },
+          {
+            "id": "champagne",
+            "label": "Champagne",
+            "swatchUrl": "https://drive.google.com/file/d/1B-PHiP3CPwgcJ-DNtEY8te2rpAZTE9qB/view?usp=sharing"
+          },
+          {
+            "id": "mill",
+            "label": "Mill",
+            "swatchUrl": "https://drive.google.com/file/d/1gwAAn0MMO_3tho9LXo0DRrcK7tz6yw8c/view?usp=sharing"
+          }
+        ]
+      },
+      {
+        "id": "7/16 x 3/4",
+        "label": "7/16 x 3/4",
+        "colors": [
+          {
+            "id": "white",
+            "label": "White",
+            "swatchUrl": "https://drive.google.com/file/d/1pJoEiE6RF4E6kRoivWDtkxNcLkXwjh_u/view?usp=sharing"
+          },
+          {
+            "id": "bronze",
+            "label": "Bronze",
+            "swatchUrl": "https://drive.google.com/file/d/1lFeejdNTcnNlEaZNryqDYG3nRxfeRziO/view?usp=sharing"
+          },
+          {
+            "id": "tan",
+            "label": "Tan",
+            "swatchUrl": "https://drive.google.com/file/d/1oFFbrPQUlFvr9TDTArZMvJ9XFwR6NPmm/view?usp=sharing"
+          },
+          {
+            "id": "champagne",
+            "label": "Champagne",
+            "swatchUrl": "https://drive.google.com/file/d/1B-PHiP3CPwgcJ-DNtEY8te2rpAZTE9qB/view?usp=sharing"
+          },
+          {
+            "id": "mill",
+            "label": "Mill",
+            "swatchUrl": "https://drive.google.com/file/d/1gwAAn0MMO_3tho9LXo0DRrcK7tz6yw8c/view?usp=sharing"
+          }
+        ]
+      },
+      {
+        "id": "3/8 x KE",
+        "label": "3/8 x KE",
+        "colors": [
+          {
+            "id": "white",
+            "label": "White",
+            "swatchUrl": "https://drive.google.com/file/d/1pJoEiE6RF4E6kRoivWDtkxNcLkXwjh_u/view?usp=sharing"
+          },
+          {
+            "id": "bronze",
+            "label": "Bronze",
+            "swatchUrl": "https://drive.google.com/file/d/1lFeejdNTcnNlEaZNryqDYG3nRxfeRziO/view?usp=sharing"
+          },
+          {
+            "id": "tan",
+            "label": "Tan",
+            "swatchUrl": "https://drive.google.com/file/d/1oFFbrPQUlFvr9TDTArZMvJ9XFwR6NPmm/view?usp=sharing"
+          },
+          {
+            "id": "champagne",
+            "label": "Champagne",
+            "swatchUrl": "https://drive.google.com/file/d/1B-PHiP3CPwgcJ-DNtEY8te2rpAZTE9qB/view?usp=sharing"
+          },
+          {
+            "id": "mill",
+            "label": "Mill",
+            "swatchUrl": "https://drive.google.com/file/d/1gwAAn0MMO_3tho9LXo0DRrcK7tz6yw8c/view?usp=sharing"
+          }
+        ]
+      },
+      {
+        "id": "STANDOFF",
+        "label": "STANDOFF",
+        "colors": [
+          {
+            "id": "white",
+            "label": "White",
+            "swatchUrl": "https://drive.google.com/file/d/1pJoEiE6RF4E6kRoivWDtkxNcLkXwjh_u/view?usp=sharing"
+          },
+          {
+            "id": "bronze",
+            "label": "Bronze",
+            "swatchUrl": "https://drive.google.com/file/d/1lFeejdNTcnNlEaZNryqDYG3nRxfeRziO/view?usp=sharing"
+          },
+          {
+            "id": "tan",
+            "label": "Tan",
+            "swatchUrl": "https://drive.google.com/file/d/1oFFbrPQUlFvr9TDTArZMvJ9XFwR6NPmm/view?usp=sharing"
+          },
+          {
+            "id": "champagne",
+            "label": "Champagne",
+            "swatchUrl": "https://drive.google.com/file/d/1B-PHiP3CPwgcJ-DNtEY8te2rpAZTE9qB/view?usp=sharing"
+          },
+          {
+            "id": "mill",
+            "label": "Mill",
+            "swatchUrl": "https://drive.google.com/file/d/1gwAAn0MMO_3tho9LXo0DRrcK7tz6yw8c/view?usp=sharing"
+          }
+        ]
+      }
+    ],
+    "door": [
+      {
+        "id": "Rolled Form Steel",
+        "label": "Rolled Form Steel",
+        "pricingKey": "Rolled Form Steel",
+        "colors": [
+          {
+            "id": "white",
+            "label": "White",
+            "swatchUrl": "https://drive.google.com/file/d/1pJoEiE6RF4E6kRoivWDtkxNcLkXwjh_u/view?usp=sharing"
+          },
+          {
+            "id": "bronze",
+            "label": "Bronze",
+            "swatchUrl": "https://drive.google.com/file/d/1lFeejdNTcnNlEaZNryqDYG3nRxfeRziO/view?usp=sharing"
+          },
+          {
+            "id": "tan",
+            "label": "Tan",
+            "swatchUrl": "https://drive.google.com/file/d/1oFFbrPQUlFvr9TDTArZMvJ9XFwR6NPmm/view?usp=sharing"
+          },
+          {
+            "id": "champagne",
+            "label": "Champagne",
+            "swatchUrl": "https://drive.google.com/file/d/1B-PHiP3CPwgcJ-DNtEY8te2rpAZTE9qB/view?usp=sharing"
+          },
+          {
+            "id": "mill",
+            "label": "Mill",
+            "swatchUrl": "https://drive.google.com/file/d/1gwAAn0MMO_3tho9LXo0DRrcK7tz6yw8c/view?usp=sharing"
+          }
+        ]
+      },
+      {
+        "id": "Standard Aluminum",
+        "label": "Standard Aluminum",
+        "pricingKey": "Standard Aluminum",
+        "colors": [
+          {
+            "id": "white",
+            "label": "White",
+            "swatchUrl": "https://drive.google.com/file/d/1pJoEiE6RF4E6kRoivWDtkxNcLkXwjh_u/view?usp=sharing"
+          },
+          {
+            "id": "bronze",
+            "label": "Bronze",
+            "swatchUrl": "https://drive.google.com/file/d/1lFeejdNTcnNlEaZNryqDYG3nRxfeRziO/view?usp=sharing"
+          },
+          {
+            "id": "tan",
+            "label": "Tan",
+            "swatchUrl": "https://drive.google.com/file/d/1oFFbrPQUlFvr9TDTArZMvJ9XFwR6NPmm/view?usp=sharing"
+          },
+          {
+            "id": "champagne",
+            "label": "Champagne",
+            "swatchUrl": "https://drive.google.com/file/d/1B-PHiP3CPwgcJ-DNtEY8te2rpAZTE9qB/view?usp=sharing"
+          },
+          {
+            "id": "mill",
+            "label": "Mill",
+            "swatchUrl": "https://drive.google.com/file/d/1gwAAn0MMO_3tho9LXo0DRrcK7tz6yw8c/view?usp=sharing"
+          }
+        ]
+      },
+      {
+        "id": "Supreme Aluminum",
+        "label": "Supreme Aluminum",
+        "pricingKey": "Premium Aluminum",
+        "colors": [
+          {
+            "id": "white",
+            "label": "White",
+            "swatchUrl": "https://drive.google.com/file/d/1pJoEiE6RF4E6kRoivWDtkxNcLkXwjh_u/view?usp=sharing"
+          },
+          {
+            "id": "bronze",
+            "label": "Bronze",
+            "swatchUrl": "https://drive.google.com/file/d/1lFeejdNTcnNlEaZNryqDYG3nRxfeRziO/view?usp=sharing"
+          },
+          {
+            "id": "tan",
+            "label": "Tan",
+            "swatchUrl": "https://drive.google.com/file/d/1oFFbrPQUlFvr9TDTArZMvJ9XFwR6NPmm/view?usp=sharing"
+          },
+          {
+            "id": "champagne",
+            "label": "Champagne",
+            "swatchUrl": "https://drive.google.com/file/d/1B-PHiP3CPwgcJ-DNtEY8te2rpAZTE9qB/view?usp=sharing"
+          },
+          {
+            "id": "mill",
+            "label": "Mill",
+            "swatchUrl": "https://drive.google.com/file/d/1gwAAn0MMO_3tho9LXo0DRrcK7tz6yw8c/view?usp=sharing"
+          }
+        ]
+      }
+    ]
+  },
+  "materialOptions": {
+    "window": [
+      {
+        "id": "FIBERGLASS",
+        "label": "FIBERGLASS",
+        "description": "A standard vinyl coated 18x16 mesh window screen designed to block insects. 45% Openess Minimal UV Blockage Vinyl coated",
+        "colors": [
+          { "id": "black", "label": "Black" },
+          { "id": "brown", "label": "Brown" },
+          { "id": "grey", "label": "Grey" }
+        ]
+      },
+      {
+        "id": "SOLAR 70",
+        "label": "SOLAR 70",
+        "description": "Vinyl coated fiberglass 25% Openess 75% UV Blockage",
+        "colors": [
+          { "id": "black", "label": "Black" },
+          { "id": "brown", "label": "Brown" },
+          { "id": "grey", "label": "Grey" }
+        ]
+      },
+      {
+        "id": "SOLAR 90",
+        "label": "SOLAR 90",
+        "description": "Vinyl coated fiberglass 10% openess 90% UV Blockage",
+        "colors": [
+          { "id": "black", "label": "Black" },
+          { "id": "brown", "label": "Brown" },
+          { "id": "grey", "label": "Grey" }
+        ]
+      },
+      {
+        "id": "SUNTEX 80",
+        "label": "SUNTEX 80",
+        "description": "Vinyl coated polyester 20% Openess 80% UV Blockage GreenGaurd & Microban",
+        "colors": [
+          { "id": "black", "label": "Black" },
+          { "id": "brown", "label": "Brown" },
+          { "id": "grey", "label": "Grey" },
+          { "id": "dark_bronze", "label": "Dark Bronze" },
+          { "id": "stucco", "label": "Stucco" },
+          { "id": "beige", "label": "Beige" }
+        ]
+      },
+      {
+        "id": "SUNTEX 90",
+        "label": "SUNTEX 90",
+        "description": "Vinyl coated polyester 10% Openess 90% UV Blockage GreenGaurd & Microban",
+        "colors": [
+          { "id": "black", "label": "Black" },
+          { "id": "brown", "label": "Brown" },
+          { "id": "grey", "label": "Grey" },
+          { "id": "dark_bronze", "label": "Dark Bronze" },
+          { "id": "stucco", "label": "Stucco" },
+          { "id": "beige", "label": "Beige" }
+        ]
+      },
+      {
+        "id": "ALUMINUM",
+        "label": "ALUMINUM",
+        "description": "Standard mesh 50% Openess NO UV Blockage",
+        "colors": [
+          { "id": "brite", "label": "Brite" }
+        ]
+      },
+      {
+        "id": "PET",
+        "label": "PET",
+        "description": "Vinyl coated & Pet Resistant 36% Openess 64% UV Blockage",
+        "colors": [
+          { "id": "black", "label": "Black" }
+        ]
+      },
+      {
+        "id": "VIMCO 20x30",
+        "label": "VIMCO 20x30",
+        "description": "Solar Insect Screen 36% Openess 65% UV Blockage GreenGaurd",
+        "colors": [
+          { "id": "black", "label": "Black" }
+        ]
+      }
+    ],
+    "door": [
+      {
+        "id": "FIBERGLASS",
+        "label": "FIBERGLASS",
+        "description": "A standard vinyl coated 18x16 mesh window screen designed to block insects. 45% Openess Minimal UV Blockage Vinyl coated",
+        "colors": [
+          { "id": "black", "label": "Black" },
+          { "id": "brown", "label": "Brown" },
+          { "id": "grey", "label": "Grey" }
+        ]
+      },
+      {
+        "id": "SOLAR 70",
+        "label": "SOLAR 70",
+        "description": "Vinyl coated fiberglass 25% Openess 75% UV Blockage",
+        "colors": [
+          { "id": "black", "label": "Black" },
+          { "id": "brown", "label": "Brown" },
+          { "id": "grey", "label": "Grey" }
+        ]
+      },
+      {
+        "id": "SOLAR 90",
+        "label": "SOLAR 90",
+        "description": "Vinyl coated fiberglass 10% openess 90% UV Blockage",
+        "colors": [
+          { "id": "black", "label": "Black" },
+          { "id": "brown", "label": "Brown" },
+          { "id": "grey", "label": "Grey" }
+        ]
+      },
+      {
+        "id": "SUNTEX 80",
+        "label": "SUNTEX 80",
+        "description": "Vinyl coated polyester 20% Openess 80% UV Blockage GreenGaurd & Microban",
+        "colors": [
+          { "id": "black", "label": "Black" },
+          { "id": "brown", "label": "Brown" },
+          { "id": "grey", "label": "Grey" },
+          { "id": "dark_bronze", "label": "Dark Bronze" },
+          { "id": "stucco", "label": "Stucco" },
+          { "id": "beige", "label": "Beige" }
+        ]
+      },
+      {
+        "id": "SUNTEX 90",
+        "label": "SUNTEX 90",
+        "description": "Vinyl coated polyester 10% Openess 90% UV Blockage GreenGaurd & Microban",
+        "colors": [
+          { "id": "black", "label": "Black" },
+          { "id": "brown", "label": "Brown" },
+          { "id": "grey", "label": "Grey" },
+          { "id": "dark_bronze", "label": "Dark Bronze" },
+          { "id": "stucco", "label": "Stucco" },
+          { "id": "beige", "label": "Beige" }
+        ]
+      },
+      {
+        "id": "ALUMINUM",
+        "label": "ALUMINUM",
+        "description": "Standard mesh 50% Openess NO UV Blockage",
+        "colors": [
+          { "id": "brite", "label": "Brite" }
+        ]
+      },
+      {
+        "id": "PET",
+        "label": "PET",
+        "description": "Vinyl coated & Pet Resistant 36% Openess 64% UV Blockage",
+        "colors": [
+          { "id": "black", "label": "Black" }
+        ]
+      },
+      {
+        "id": "VIMCO 20x30",
+        "label": "VIMCO 20x30",
+        "description": "Solar Insect Screen 36% Openess 65% UV Blockage GreenGaurd",
+        "colors": [
+          { "id": "black", "label": "Black" }
+        ]
+      }
+    ]
+  },
+  "hardwareOptions": [
+    {
+      "id": "slide_leaf_spring",
+      "label": "Slide Leaf Spring",
+      "initials": "SLS",
+      "imageUrl": "https://drive.google.com/file/d/1Y2zpT8WZgljv_GhtMjfr1VkF4cQLZcq2/view?usp=sharing"
+    },
+    {
+      "id": "pull_tab",
+      "label": "Pull Tab",
+      "initials": "PT",
+      "imageUrl": "https://drive.google.com/drive/folders/10r1wauaxccm1AC2izQAlNNW8CENN-0Nb?usp=sharing"
+    },
+    {
+      "id": "bale_clip",
+      "label": "Bale Clip",
+      "initials": "BC",
+      "imageUrl": "https://drive.google.com/file/d/1h7OAK30jdSpHB5Zssf3Rjayl5PUH4lOq/view?usp=sharing"
+    },
+    {
+      "id": "tension_spring",
+      "label": "Tension Spring",
+      "initials": "TS",
+      "imageUrl": "https://drive.google.com/file/d/11GtkYFmvbhCfwLEeVP_eFxjKQLOmZhyI/view?usp=sharing"
+    },
+    {
+      "id": "plunger",
+      "label": "Plunger",
+      "initials": "PL",
+      "imageUrl": "https://drive.google.com/file/d/1IASOcNnqw0kuZPsBXjSRoXtdHQL2BW8t/view?usp=sharing"
+    }
+  ],
+  "doorHardwareOptions": [
+    {
+      "id": "steel_rollers",
+      "label": "Steel Rollers (recommended)",
+      "initials": "STL",
+      "imageUrl": ""
+    },
+    {
+      "id": "nylon_rollers",
+      "label": "Nylon Rollers",
+      "initials": "NYL",
+      "imageUrl": ""
+    }
+  ],
+  "pricingWindow": [
+    { "materialId": "FIBERGLASS", "frameId": "5/16 x 3/4", "retailPerInch": 0.53 },
+    { "materialId": "FIBERGLASS", "frameId": "7/16 x 3/4", "retailPerInch": 0.53 },
+    { "materialId": "FIBERGLASS", "frameId": "3/8 x 3/4", "retailPerInch": 0.53 },
+    { "materialId": "FIBERGLASS", "frameId": "STANDOFF", "retailPerInch": 0.6 },
+    { "materialId": "FIBERGLASS", "frameId": "3/8 x KE", "retailPerInch": 0.53 },
+    { "materialId": "ALUMINUM", "frameId": "5/16 x 3/4", "retailPerInch": 0.73 },
+    { "materialId": "ALUMINUM", "frameId": "7/16 x 3/4", "retailPerInch": 0.73 },
+    { "materialId": "ALUMINUM", "frameId": "3/8 x 3/4", "retailPerInch": 0.73 },
+    { "materialId": "ALUMINUM", "frameId": "STANDOFF", "retailPerInch": 0.79 },
+    { "materialId": "ALUMINUM", "frameId": "3/8 x KE", "retailPerInch": 0.73 },
+    { "materialId": "PET", "frameId": "5/16 x 3/4", "retailPerInch": 0.9 },
+    { "materialId": "PET", "frameId": "7/16 x 3/4", "retailPerInch": 0.9 },
+    { "materialId": "PET", "frameId": "3/8 x 3/4", "retailPerInch": 0.9 },
+    { "materialId": "PET", "frameId": "STANDOFF", "retailPerInch": 0.98 },
+    { "materialId": "PET", "frameId": "3/8 x KE", "retailPerInch": 0.9 },
+    { "materialId": "VIMCO 20x30", "frameId": "5/16 x 3/4", "retailPerInch": 0.95 },
+    { "materialId": "VIMCO 20x30", "frameId": "7/16 x 3/4", "retailPerInch": 0.95 },
+    { "materialId": "VIMCO 20x30", "frameId": "3/8 x 3/4", "retailPerInch": 0.95 },
+    { "materialId": "VIMCO 20x30", "frameId": "STANDOFF", "retailPerInch": 1.0 },
+    { "materialId": "VIMCO 20x30", "frameId": "3/8 x KE", "retailPerInch": 0.95 },
+    { "materialId": "SOLAR 70", "frameId": "5/16 x 3/4", "retailPerInch": 1.05 },
+    { "materialId": "SOLAR 70", "frameId": "7/16 x 3/4", "retailPerInch": 1.05 },
+    { "materialId": "SOLAR 70", "frameId": "3/8 x 3/4", "retailPerInch": 1.05 },
+    { "materialId": "SOLAR 70", "frameId": "STANDOFF", "retailPerInch": 1.12 },
+    { "materialId": "SOLAR 70", "frameId": "3/8 x KE", "retailPerInch": 1.05 },
+    { "materialId": "SUNTEX 80", "frameId": "5/16 x 3/4", "retailPerInch": 1.4 },
+    { "materialId": "SUNTEX 80", "frameId": "7/16 x 3/4", "retailPerInch": 1.4 },
+    { "materialId": "SUNTEX 80", "frameId": "3/8 x 3/4", "retailPerInch": 1.4 },
+    { "materialId": "SUNTEX 80", "frameId": "STANDOFF", "retailPerInch": 1.47 },
+    { "materialId": "SUNTEX 80", "frameId": "3/8 x KE", "retailPerInch": 1.4 },
+    { "materialId": "SUNTEX 90", "frameId": "5/16 x 3/4", "retailPerInch": 1.6 },
+    { "materialId": "SUNTEX 90", "frameId": "7/16 x 3/4", "retailPerInch": 1.6 },
+    { "materialId": "SUNTEX 90", "frameId": "3/8 x 3/4", "retailPerInch": 1.6 },
+    { "materialId": "SUNTEX 90", "frameId": "STANDOFF", "retailPerInch": 1.7 },
+    { "materialId": "SUNTEX 90", "frameId": "3/8 x KE", "retailPerInch": 1.6 },
+    { "materialId": "SOLAR 90", "frameId": "5/16 x 3/4", "retailPerInch": 1.6 },
+    { "materialId": "SOLAR 90", "frameId": "7/16 x 3/4", "retailPerInch": 1.6 },
+    { "materialId": "SOLAR 90", "frameId": "3/8 x 3/4", "retailPerInch": 1.6 },
+    { "materialId": "SOLAR 90", "frameId": "STANDOFF", "retailPerInch": 1.7 },
+    { "materialId": "SOLAR 90", "frameId": "3/8 x KE", "retailPerInch": 1.6 }
+  ],
+  "pricingDoor": [
+    { "materialId": "FIBERGLASS", "frameId": "Standard Aluminum", "retailPerInch": 1.25 },
+    { "materialId": "FIBERGLASS", "frameId": "Premium Aluminum", "retailPerInch": 1.44 },
+    { "materialId": "FIBERGLASS", "frameId": "Rolled Form Steel", "retailPerInch": 0.8 },
+    { "materialId": "ALUMINUM", "frameId": "Standard Aluminum", "retailPerInch": 1.35 },
+    { "materialId": "ALUMINUM", "frameId": "Premium Aluminum", "retailPerInch": 1.55 },
+    { "materialId": "ALUMINUM", "frameId": "Rolled Form Steel", "retailPerInch": 0.87 },
+    { "materialId": "PET", "frameId": "Standard Aluminum", "retailPerInch": 1.6 },
+    { "materialId": "PET", "frameId": "Premium Aluminum", "retailPerInch": 1.82 },
+    { "materialId": "PET", "frameId": "Rolled Form Steel", "retailPerInch": 1.12 },
+    { "materialId": "VIMCO 20x30", "frameId": "Standard Aluminum", "retailPerInch": 1.65 },
+    { "materialId": "VIMCO 20x30", "frameId": "Premium Aluminum", "retailPerInch": 1.87 },
+    { "materialId": "VIMCO 20x30", "frameId": "Rolled Form Steel", "retailPerInch": 1.12 },
+    { "materialId": "SOLAR 70", "frameId": "Standard Aluminum", "retailPerInch": 1.7 },
+    { "materialId": "SOLAR 70", "frameId": "Premium Aluminum", "retailPerInch": 1.9 },
+    { "materialId": "SOLAR 70", "frameId": "Rolled Form Steel", "retailPerInch": 1.15 },
+    { "materialId": "SUNTEX 80", "frameId": "Standard Aluminum", "retailPerInch": 2.05 },
+    { "materialId": "SUNTEX 80", "frameId": "Premium Aluminum", "retailPerInch": 2.25 },
+    { "materialId": "SUNTEX 80", "frameId": "Rolled Form Steel", "retailPerInch": 1.5 },
+    { "materialId": "SUNTEX 90", "frameId": "Standard Aluminum", "retailPerInch": 2.15 },
+    { "materialId": "SUNTEX 90", "frameId": "Premium Aluminum", "retailPerInch": 2.35 },
+    { "materialId": "SUNTEX 90", "frameId": "Rolled Form Steel", "retailPerInch": 1.55 },
+    { "materialId": "SOLAR 90", "frameId": "Standard Aluminum", "retailPerInch": 1.82 },
+    { "materialId": "SOLAR 90", "frameId": "Premium Aluminum", "retailPerInch": 2.02 },
+    { "materialId": "SOLAR 90", "frameId": "Rolled Form Steel", "retailPerInch": 1.17 }
+  ]
+}
