@@ -92,13 +92,6 @@ function hideError() {
 }
 
 
-function driveToDirect(url) {
-  const s = String(url ?? '');
-  const m = s.match(/\/d\/([a-zA-Z0-9_-]+)/) || s.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (!m) return s;
-  return `https://drive.google.com/uc?export=download&id=${m[1]}`;
-}
-
 function normalizeArray(value) {
   if (Array.isArray(value)) return value;
   if (value == null) return [];
@@ -136,6 +129,64 @@ function normalizeColorList(value) {
     .filter((item) => item && (item.id || item.label));
 }
 
+function normalizeColorName(name) {
+  return String(name ?? '')
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeMaterialName(name) {
+  return normalizeColorName(name);
+}
+
+function resolveColorKey(name) {
+  const normalized = normalizeColorName(name);
+  if (normalized === 'charcoal') return 'black';
+  return normalized;
+}
+
+function getDisplayColorLabel(color) {
+  const rawLabel = color?.label || color?.id || '';
+  const normalized = normalizeColorName(rawLabel);
+  if (normalized === 'charcoal') return 'Black';
+  return rawLabel || color?.id || '';
+}
+
+const FRAME_SWATCH_MAP = {
+  white: 'swatches/frame_white.png',
+  bronze: 'swatches/frame_bronze.png',
+  tan: 'swatches/frame_tan.png',
+  champagne: 'swatches/frame_champagne.png',
+  mill: 'swatches/frame_mill.png'
+};
+
+const MATERIAL_SWATCH_MAP = {
+  black: 'swatches/mat_black.png',
+  brown: 'swatches/mat_brown.png',
+  gray: 'swatches/mat_gray.png',
+  grey: 'swatches/mat_gray.png',
+  beige: 'swatches/mat_beige.png',
+  stucco: 'swatches/mat_stucco.png',
+  'dark bronze': 'swatches/mat_dark_bronze.png'
+};
+
+const SOLAR_SWATCH_MAP = {
+  black: 'swatches/solar_black.png',
+  brown: 'swatches/solar_brown.png',
+  gray: 'swatches/solar_gray.png',
+  grey: 'swatches/solar_gray.png'
+};
+
+const PET_SWATCH_MAP = {
+  black: 'swatches/pet_black.png'
+};
+
+const FIBERGLASS_SWATCH_MAP = {
+  black: 'swatches/fiberglass_black.png'
+};
+
 
 function showView(viewId) {
   document
@@ -149,31 +200,23 @@ function getCurrentScreenType() {
 }
 
 function getFrameColorSwatchUrl(frameType, colorName) {
-  const cfg = AppState.config;
-  const screenType = getCurrentScreenType();
-  const list = normalizeObjectArray(cfg?.frameOptions?.[screenType] || cfg?.frameOptions?.window);
-  const item = list.find(
-    (x) => String(x?.id ?? x?.label ?? '').trim() === String(frameType).trim()
-  );
-  const colors = normalizeColorList(item?.colors);
-  const colorObj = colors.find(
-    (c) => String(c.id || c.label).trim() === String(colorName).trim()
-  );
-  return colorObj?.swatchUrl ? driveToDirect(colorObj.swatchUrl) : '';
+  const colorKey = resolveColorKey(colorName);
+  return FRAME_SWATCH_MAP[colorKey] || '';
 }
 
 function getMaterialColorSwatchUrl(materialType, colorName) {
-  const cfg = AppState.config;
-  const screenType = getCurrentScreenType();
-  const list = normalizeObjectArray(cfg?.materialOptions?.[screenType] || cfg?.materialOptions?.window);
-  const item = list.find(
-    (x) => String(x?.id ?? x?.label ?? '').trim() === String(materialType).trim()
-  );
-  const colors = normalizeColorList(item?.colors);
-  const colorObj = colors.find(
-    (c) => String(c.id || c.label).trim() === String(colorName).trim()
-  );
-  return colorObj?.swatchUrl ? driveToDirect(colorObj.swatchUrl) : '';
+  const materialKey = normalizeMaterialName(materialType);
+  const colorKey = resolveColorKey(colorName);
+  if (materialKey === 'solar 70' || materialKey === 'solar 90') {
+    return SOLAR_SWATCH_MAP[colorKey] || MATERIAL_SWATCH_MAP[colorKey] || '';
+  }
+  if (materialKey === 'pet') {
+    return PET_SWATCH_MAP[colorKey] || MATERIAL_SWATCH_MAP[colorKey] || '';
+  }
+  if (materialKey === 'fiberglass') {
+    return FIBERGLASS_SWATCH_MAP[colorKey] || MATERIAL_SWATCH_MAP[colorKey] || '';
+  }
+  return MATERIAL_SWATCH_MAP[colorKey] || '';
 }
 
 function syncFrameColorSwatch() {
@@ -517,14 +560,10 @@ function updateFrameColorSwatch() {
   const colorDef = normalizeColorList(frameDef?.colors).find(
     (c) => c.id === frameColorSelect.value
   );
+  const colorLabel = colorDef?.label || colorDef?.id || frameColorSelect.value;
+  const url = getFrameColorSwatchUrl(frameTypeSelect.value, colorLabel);
 
-  if (colorDef && colorDef.swatchUrl) {
-    // convert Google Drive share link to direct view
-    let url = colorDef.swatchUrl;
-    const match = url.match(/\/file\/d\/([^/]+)\//);
-    if (match) {
-      url = `https://drive.google.com/uc?export=view&id=${match[1]}`;
-    }
+  if (colorDef && url) {
     swatchImg.onload = () => {
       swatchContainer.classList.remove('hidden');
     };
@@ -564,18 +603,19 @@ function renderFrameColorTiles() {
 
     const chip = document.createElement('span');
     chip.className = 'swatch-chip';
-    if (color.swatchUrl) {
-      const url = driveToDirect(color.swatchUrl);
+    const labelText = getDisplayColorLabel(color);
+    const url = getFrameColorSwatchUrl(frameTypeSelect.value, labelText);
+    if (url) {
       chip.style.backgroundImage = `url("${url}")`;
       chip.style.backgroundSize = 'cover';
       chip.style.backgroundPosition = 'center';
     } else {
-      chip.style.backgroundColor = String(color.label || color.id).toLowerCase();
+      chip.style.backgroundColor = String(labelText).toLowerCase();
     }
 
     const label = document.createElement('span');
     label.className = 'swatch-label';
-    label.textContent = color.label || color.id;
+    label.textContent = labelText;
 
     btn.appendChild(chip);
     btn.appendChild(label);
@@ -667,24 +707,24 @@ function renderMaterialColorTiles() {
 
     const chip = document.createElement('span');
     chip.className = 'swatch-chip';
-    if (color.swatchUrl) {
-      const url = driveToDirect(color.swatchUrl);
+    const labelText = getDisplayColorLabel(color);
+    const url = getMaterialColorSwatchUrl(materialTypeSelect.value, labelText);
+    if (url) {
       chip.style.backgroundImage = `url("${url}")`;
       chip.style.backgroundSize = 'cover';
       chip.style.backgroundPosition = 'center';
     } else {
-      chip.style.backgroundColor = String(color.label || color.id).toLowerCase();
+      chip.style.backgroundColor = String(labelText).toLowerCase();
     }
 
     const label = document.createElement('span');
     label.className = 'swatch-label';
-    label.textContent = color.label || color.id;
+    label.textContent = labelText;
 
     btn.appendChild(chip);
     btn.appendChild(label);
     btn.addEventListener('click', () => {
       materialColorSelect.value = color.id;
-      updateMaterialColorOptions();
       syncMaterialColorSwatch();
       renderMaterialColorTiles();
     });

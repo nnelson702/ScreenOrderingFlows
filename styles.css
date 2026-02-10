@@ -324,6 +324,18 @@ textarea {
 .hidden {
   display: none !important;
 }
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 /* Banner */
 .banner {
   max-width: 1100px;
@@ -508,62 +520,45 @@ textarea {
 /* Force better wrapping in summary cards */
 .info-lines > div { line-height: 1.35; }
 
-/* Swatch previews */
-.swatch-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-}
-.color-swatch {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  border: 1px solid rgba(0,0,0,0.15);
-  background: #f0f0f0;
-}
-.swatch-img {
-  height: 26px;
-  width: auto;
-  border-radius: 6px;
-  border: 1px solid rgba(0,0,0,0.12);
-  display: none;
-}
+/* Swatch tiles */
 .swatch-tiles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
 }
 .swatch-tile {
-  border: 1px solid #d0d4da;
-  border-radius: 0.5rem;
+  border: 2px solid #d0d4da;
+  border-radius: 0.65rem;
   background: #fff;
-  padding: 0.35rem 0.4rem;
-  width: 84px;
+  padding: 0.5rem 0.4rem 0.6rem;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.45rem;
   cursor: pointer;
 }
 .swatch-tile.is-selected {
   border-color: #b01c2e;
-  box-shadow: 0 0 0 2px rgba(176, 28, 46, 0.15);
+  box-shadow: 0 0 0 2px rgba(176, 28, 46, 0.2);
+  background: #fff7f8;
 }
 .swatch-tile:focus-visible {
   outline: 2px solid #b01c2e;
   outline-offset: 2px;
 }
 .swatch-chip {
-  width: 36px;
-  height: 36px;
-  border-radius: 0.4rem;
+  width: 54px;
+  height: 54px;
+  border-radius: 0.5rem;
   border: 1px solid rgba(0,0,0,0.12);
   background: #f0f0f0;
+  background-size: cover;
+  background-position: center;
 }
 .swatch-label {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   text-align: center;
 }
 

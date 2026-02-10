@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -334,23 +334,11 @@
               </div>
 
               <div class="form-field">
-                <label for="frameColor">Frame Color</label>
-                <select id="frameColor" name="frameColor" required>
+                <label class="field-label">Frame Color</label>
+                <select id="frameColor" name="frameColor" required class="visually-hidden" aria-hidden="true" tabindex="-1">
                   <!-- options populated from config -->
                 </select>
-          <div class="swatch-row">
-            <span class="color-swatch" id="frameColorSwatchInline" aria-label="Frame color swatch"></span>
-            <img class="swatch-img" id="frameColorSwatchImgInline" alt="Frame color swatch image" />
-          </div>
-          <div id="frameColorTiles" class="swatch-tiles" aria-label="Frame color options"></div>
-
-              </div>
-
-              <div class="form-field full-width">
-                <div id="frameColorSwatchPreview" class="swatch-preview hidden">
-                  <img id="frameColorSwatchImg" alt="Frame color swatch" />
-                  <div id="frameColorSwatchLabel" class="helper-text small"></div>
-                </div>
+                <div id="frameColorTiles" class="swatch-tiles" aria-label="Frame color options"></div>
               </div>
             </div>
           </div>
@@ -366,16 +354,11 @@
               </div>
 
               <div class="form-field">
-                <label for="materialColor">Material Color</label>
-                <select id="materialColor" name="materialColor" required>
+                <label class="field-label">Material Color</label>
+                <select id="materialColor" name="materialColor" required class="visually-hidden" aria-hidden="true" tabindex="-1">
                   <!-- options populated based on material -->
                 </select>
-          <div class="swatch-row">
-            <span class="color-swatch" id="materialColorSwatchInline" aria-label="Material color swatch"></span>
-            <img class="swatch-img" id="materialColorSwatchImgInline" alt="Material color swatch image" />
-          </div>
-          <div id="materialColorTiles" class="swatch-tiles" aria-label="Material color options"></div>
-
+                <div id="materialColorTiles" class="swatch-tiles" aria-label="Material color options"></div>
               </div>
 
               <div class="form-field full-width">
