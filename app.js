@@ -7,6 +7,9 @@ const ERROR_LOG_ENDPOINT =
 const ENVIRONMENT = 'dev';
 const TAX_RATE = 0;
 
+// ✅ Cloudflare Worker API base URL (replace with your real deployed worker URL if different)
+const API_BASE_URL = 'https://screen-ordering-api.nnelson.workers.dev';
+
 // Global application state
 const AppState = {
   environment: ENVIRONMENT,
@@ -90,7 +93,6 @@ function hideError() {
     }
   }
 }
-
 
 function normalizeArray(value) {
   if (Array.isArray(value)) return value;
@@ -187,7 +189,6 @@ const FIBERGLASS_SWATCH_MAP = {
   black: 'swatches/fiberglass_black.png'
 };
 
-
 function showView(viewId) {
   document
     .querySelectorAll('.view')
@@ -260,7 +261,6 @@ function syncMaterialColorSwatch() {
     }
   }
 }
-
 
 function formatAddress(addr) {
   if (!addr) return '';
@@ -912,11 +912,10 @@ function showScreenStep(step) {
   const sharedSubtitle = document.querySelector('#view-add-screen .view-subtitle');
   if (sharedSubtitle) sharedSubtitle.style.display = (step === 1 ? '' : 'none');
 
-
   currentScreenStep = step;
   const screenType = getCurrentScreenType();
   const MAX_SCREEN_STEP = screenType === 'window' ? 6 : 5;
-  
+
   // Hide Step 6 entirely for doors
   const step6 = document.querySelector('.screen-step[data-step="6"]');
   if (step6) {
@@ -926,7 +925,7 @@ function showScreenStep(step) {
       step6.style.display = '';
     }
   }
-  
+
   document.querySelectorAll('.screen-step').forEach((el) => {
     el.classList.remove('active-step');
   });
@@ -937,12 +936,12 @@ function showScreenStep(step) {
   if (indicator) {
     indicator.textContent = `Step ${step} of ${MAX_SCREEN_STEP}`;
   }
-  
+
   // Evaluate crossbar recommendation when reaching Step 6 for window screens
   if (step === 6 && screenType === 'window') {
     evaluateCrossbarRecommendation();
   }
-  
+
   const prevBtn = $('#btnScreenPrev');
   const nextBtn = $('#btnScreenNext');
   const saveBtn = $('#btnSaveScreen');
@@ -958,7 +957,7 @@ function showScreenStep(step) {
 function handleNextStep() {
   const screenType = getCurrentScreenType();
   const MAX_SCREEN_STEP = screenType === 'window' ? 6 : 5;
-  
+
   if (currentScreenStep < MAX_SCREEN_STEP) {
     showScreenStep(currentScreenStep + 1);
   }
@@ -975,14 +974,14 @@ function evaluateCrossbarRecommendation() {
     crossbarRecommended = false;
     return;
   }
-  
+
   // Check if crossbar elements exist in DOM before attempting to update
   const crossbarLabel = $('#crossbarLabel');
   const crossbarHelper = $('#crossbarHelper');
   if (!crossbarLabel || !crossbarHelper) {
     return;
   }
-  
+
   const w = parseDimensionInches($('#screenWidthWhole')?.value, $('#screenWidthFraction')?.value);
   const h = parseDimensionInches($('#screenHeightWhole')?.value, $('#screenHeightFraction')?.value);
   const maxSide = Math.max(w, h);
@@ -1088,7 +1087,10 @@ function initEventHandlers() {
   });
   $('#btnAddHardware')?.addEventListener('click', handleAddHardware);
   $('#hardwareType')?.addEventListener('change', updateHardwareImage);
-  $('#btnSubmitQuote')?.addEventListener('click', handleSubmitQuote);
+  $('#btnSubmitQuote')?.addEventListener('click', () => {
+    // allow async handleSubmitQuote
+    handleSubmitQuote();
+  });
   $('#btnNewQuote')?.addEventListener('click', () => {
     resetQuote();
     showView('landing');
@@ -1259,24 +1261,125 @@ function handleScreenSubmit(event) {
   showView('dashboard');
 }
 
-function handleSubmitQuote() {
-  if (!AppState.customer || !AppState.store) {
-    alert('Please complete customer and store information first.');
-    return;
+/**
+ * ✅ Submit quote to Cloudflare Worker API (which persists to Supabase and triggers emails/payment)
+ * This keeps your front-end flow the same: only "Submit Quote" now calls backend.
+ */
+async function submitQuoteToApi() {
+  // Totals (same as renderSummary)
+  const subtotal = AppState.lineItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
+  const tax = roundCurrency(subtotal * TAX_RATE);
+  const delivery = 0;
+  const total = roundCurrency(subtotal + tax + delivery);
+
+  const payload = {
+    customer: {
+      name: AppState.customer.name,
+      street: AppState.customer.street,
+      city: AppState.customer.city,
+      state: AppState.customer.state,
+      zip: AppState.customer.zip,
+      phone: AppState.customer.phone,
+      email: AppState.customer.email
+    },
+    store: {
+      id: AppState.store?.id || null,
+      name: AppState.store?.name || '',
+      email: AppState.store?.email || '',
+      phone: AppState.store?.phone || null,
+      street: AppState.store?.address || null,
+      city: AppState.store?.city || null,
+      state: AppState.store?.state || null,
+      zip: AppState.store?.zip || null
+    },
+    totals: {
+      subtotal_cents: Math.round(subtotal * 100),
+      delivery_cents: Math.round(delivery * 100),
+      tax_cents: Math.round(tax * 100),
+      total_cents: Math.round(total * 100)
+    },
+    items: AppState.lineItems.map((item, idx) => {
+      return {
+        sort_index: idx + 1,
+        type: item.screenType === 'door' ? 'door' : 'window',
+        qty: item.qty || 1,
+        width_display: item.width,
+        height_display: item.height,
+        frame_type: item.frameType,
+        frame_color: item.frameColor,
+        material_type: item.materialType,
+        material_color: item.materialColor,
+        line_total_cents: Math.round((item.lineTotal || 0) * 100),
+
+        frame_cut_type: item.frameCutType || null,
+
+        crossbar_needed: item.crossbarNeeded ?? null,
+        crossbar_orientation: item.crossbarOrientation || null,
+        crossbar_distance_display: item.crossbarDistance || null,
+
+        handle_orientation: item.handleOrientation || null,
+        handle_height_display: item.handleHeightDisplay || null,
+
+        roller_type: item.doorRollers || null,
+
+        hardware_json: item.hardwareAssignments ? item.hardwareAssignments : null
+      };
+    })
+  };
+
+  const resp = await fetch(`${API_BASE_URL}/api/quote/create`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!resp.ok) {
+    let msg = `Quote submit failed (HTTP ${resp.status})`;
+    try {
+      const data = await resp.json();
+      if (data?.error) msg = `${msg}: ${data.error}`;
+    } catch (e) {
+      // ignore
+    }
+    throw new Error(msg);
   }
-  if (!AppState.lineItems.length) {
-    alert('Please add at least one screen to the quote.');
-    return;
+
+  return await resp.json();
+}
+
+// ✅ UPDATED: now submits to backend instead of generating a local quote id only
+async function handleSubmitQuote() {
+  try {
+    if (!AppState.customer || !AppState.store) {
+      alert('Please complete customer and store information first.');
+      return;
+    }
+    if (!AppState.lineItems.length) {
+      alert('Please add at least one screen to the quote.');
+      return;
+    }
+    const ack = $('#ackMeasurements');
+    if (!ack || !ack.checked) {
+      alert(
+        'Please acknowledge that measurements and hardware selections are your responsibility before submitting.'
+      );
+      return;
+    }
+
+    const result = await submitQuoteToApi();
+
+    // Use backend quote id if provided, otherwise fallback
+    AppState.quoteId = result?.quote_id || result?.id || generateQuoteId();
+
+    // Stripe line indicator (optional)
+    AppState.stripeEnabled = Boolean(result?.payment_url);
+
+    renderSuccessView();
+  } catch (err) {
+    console.error('Submit quote failed:', err);
+    showError(err?.message || 'Quote submission failed. Please try again.');
+    alert(err?.message || 'Quote submission failed. Please try again.');
   }
-  const ack = $('#ackMeasurements');
-  if (!ack || !ack.checked) {
-    alert(
-      'Please acknowledge that measurements and hardware selections are your responsibility before submitting.'
-    );
-    return;
-  }
-  AppState.quoteId = generateQuoteId();
-  renderSuccessView();
 }
 
 function resetScreenForm() {
@@ -1302,7 +1405,6 @@ function resetQuote() {
   renderSummary();
   renderLineItems();
 }
-
 
 function renderSummary() {
   try {
