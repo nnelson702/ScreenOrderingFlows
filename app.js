@@ -1197,10 +1197,10 @@ function handleScreenSubmit(event) {
   let unitPrice = null;
   let lineTotal = null;
   if (ratePerInch != null) {
-    const halfPerimeter = widthInches + heightInches;
-    unitPrice = roundCurrency(halfPerimeter * ratePerInch);
-    lineTotal = roundCurrency(unitPrice * qty);
-  } else {
+  const pricedHalfPerimeter = Math.ceil(widthInches + heightInches);
+  unitPrice = roundCurrency(pricedHalfPerimeter * ratePerInch);
+  lineTotal = roundCurrency(unitPrice * qty);
+} else {
     logError({
       errorType: 'PRICING_LOOKUP_MISS',
       location: 'handleScreenSubmit',
