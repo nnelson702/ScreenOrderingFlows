@@ -3,8 +3,11 @@ export default {
     const url = new URL(request.url);
     if (request.method === 'OPTIONS') return cors(request, env, new Response(null, { status: 204 }));
     try {
+      if (request.method === 'GET' && url.pathname === '/') {
+        return cors(request, env, json({ ok: true, service: 'screen-ordering-api', message: 'API is running. Use /health for diagnostics.', phase: 'quote-create-v3-stripe-details' }));
+      }
       if (request.method === 'GET' && url.pathname === '/health') {
-        return cors(request, env, json({ ok: true, service: 'screen-ordering-api', phase: 'quote-create-v2-diagnostics', env: envStatus(env) }));
+        return cors(request, env, json({ ok: true, service: 'screen-ordering-api', phase: 'quote-create-v3-stripe-details', env: envStatus(env) }));
       }
       if (request.method === 'GET' && url.pathname === '/api/quote/create') {
         return cors(request, env, json({ ok: true, route: '/api/quote/create', allowed_method: 'POST', note: 'This endpoint is working; browser address bar uses GET, but the quote form uses POST.' }, 405));
@@ -101,7 +104,7 @@ async function createQuote(request, env) {
   const checkout = await createCheckout(request, env, quote);
   if (!checkout.ok) {
     await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quote.id), { status: 'payment_link_failed' });
-    return json({ error: 'Stripe checkout session create failed', quote_id: quote.id, details: checkout.error }, 500);
+    return json({ error: 'Stripe checkout session create failed: ' + summarizeStripeError(checkout.error), quote_id: quote.id, details: checkout.error }, 500);
   }
 
   const updated = await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quote.id), {
@@ -147,6 +150,7 @@ function envStatus(env) {
     RESEND_API_KEY: Boolean(env.RESEND_API_KEY)
   };
 }
+function summarizeStripeError(error) { if (!error) return 'Unknown Stripe error'; if (typeof error === 'string') return error; if (error.error && error.error.message) return error.error.message; if (error.message) return error.message; return JSON.stringify(error); }
 function missingEnv(env, names) { return names.filter((name) => !env[name]); }
 function sbHeaders(env) { return { 'Content-Type': 'application/json', apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: 'Bearer ' + env.SUPABASE_SERVICE_ROLE_KEY }; }
 async function sbInsert(env, table, payload) {
