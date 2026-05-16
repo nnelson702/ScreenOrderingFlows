@@ -3,16 +3,25 @@ export default {
     const url = new URL(request.url);
     if (request.method === 'OPTIONS') return cors(request, env, new Response(null, { status: 204 }));
     try {
-      if (request.method === 'GET' && url.pathname === '/health') return cors(request, env, json({ ok: true, service: 'screen-ordering-api', phase: 'quote-create-v1' }));
+      if (request.method === 'GET' && url.pathname === '/health') {
+        return cors(request, env, json({ ok: true, service: 'screen-ordering-api', phase: 'quote-create-v2-diagnostics', env: envStatus(env) }));
+      }
+      if (request.method === 'GET' && url.pathname === '/api/quote/create') {
+        return cors(request, env, json({ ok: true, route: '/api/quote/create', allowed_method: 'POST', note: 'This endpoint is working; browser address bar uses GET, but the quote form uses POST.' }, 405));
+      }
       if (request.method === 'POST' && url.pathname === '/api/quote/create') return cors(request, env, await createQuote(request, env));
       return cors(request, env, json({ error: 'Not found', path: url.pathname }, 404));
     } catch (err) {
-      return cors(request, env, json({ error: 'Server error', message: String(err && err.message ? err.message : err) }, 500));
+      const message = String(err && err.message ? err.message : err);
+      return cors(request, env, json({ error: 'Server error: ' + message, message }, 500));
     }
   }
 };
 
 async function createQuote(request, env) {
+  const missing = missingEnv(env, ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'STRIPE_SECRET_KEY']);
+  if (missing.length) return json({ error: 'Missing required Worker environment variables', missing, env: envStatus(env) }, 500);
+
   const body = await request.json();
   const customer = body.customer || {};
   const store = body.store || {};
@@ -127,6 +136,18 @@ async function createCheckout(request, env, quote) {
   return { ok: true, data };
 }
 
+function envStatus(env) {
+  return {
+    ALLOWED_ORIGINS: Boolean(env.ALLOWED_ORIGINS),
+    CONFIG_URL: Boolean(env.CONFIG_URL),
+    SUPABASE_URL: Boolean(env.SUPABASE_URL),
+    SUPABASE_SERVICE_ROLE_KEY: Boolean(env.SUPABASE_SERVICE_ROLE_KEY),
+    STRIPE_SECRET_KEY: Boolean(env.STRIPE_SECRET_KEY),
+    STRIPE_WEBHOOK_SECRET: Boolean(env.STRIPE_WEBHOOK_SECRET),
+    RESEND_API_KEY: Boolean(env.RESEND_API_KEY)
+  };
+}
+function missingEnv(env, names) { return names.filter((name) => !env[name]); }
 function sbHeaders(env) { return { 'Content-Type': 'application/json', apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: 'Bearer ' + env.SUPABASE_SERVICE_ROLE_KEY }; }
 async function sbInsert(env, table, payload) {
   const res = await fetch(trim(env.SUPABASE_URL) + '/rest/v1/' + table + '?select=*', { method: 'POST', headers: { ...sbHeaders(env), Prefer: 'return=representation' }, body: JSON.stringify(payload) });
@@ -147,7 +168,6 @@ async function sbDelete(env, table, key, value) {
   if (!res.ok) return { ok: false, error: parse(text) || text || ('HTTP ' + res.status) };
   return { ok: true };
 }
-
 function json(obj, status = 200) { return new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } }); }
 function cors(request, env, response) {
   const origin = request.headers.get('Origin') || '';
