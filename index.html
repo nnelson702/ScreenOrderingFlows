@@ -1,4 +1,4 @@
-﻿﻿﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -601,17 +601,13 @@
     <section id="view-success" class="view">
       <div class="card card-wide">
         <h2>Quote submitted successfully.</h2>
-        <p>
-          Your screen quote has been submitted. This quote has not yet been placed
-          with our vendor. Payment is required before the order will be placed.
-        </p>
-        <p>
-          A copy of your quote has been emailed to you, and your selected store
-          has received the quote and order details.
-        </p>
         <p id="successStripeLine" class="helper-text hidden">
-          A secure payment link has been included in your quote email if you'd
-          like to pay online.
+          Your Screen Quote has been created, but not yet placed. Review the details of your order for accuracy and then
+          <a id="successPaymentLink" href="#" target="_blank" rel="noopener">Pay Here</a>,
+          use the link in your emailed quote, or visit the store to make payment and complete your order.
+        </p>
+        <p>
+          Once payment is received, production on your order will begin and will no longer be able to be cancelled or modified.
         </p>
 
         <section class="summary-grid">
@@ -663,9 +659,63 @@
 
   <footer class="app-footer">
     <span>Helpful ACE Screen Tool &mdash; Internal Pilot Build</span>
-    <span id="appVersion">v0.2.2</span>
+    <span id="appVersion">v0.2.3</span>
   </footer>
 
-  <script src="app.js?v=2"></script>
+  <script>
+    window.__screenPaymentUrl = null;
+
+    function updateSuccessPaymentLink() {
+      const link = document.getElementById('successPaymentLink');
+      if (!link) return;
+
+      if (window.__screenPaymentUrl) {
+        link.href = window.__screenPaymentUrl;
+        link.classList.remove('disabled');
+        link.setAttribute('aria-disabled', 'false');
+      } else {
+        link.href = '#';
+        link.setAttribute('aria-disabled', 'true');
+      }
+    }
+
+    (function captureQuoteCreatePaymentUrl() {
+      const originalFetch = window.fetch.bind(window);
+      window.fetch = async function patchedFetch() {
+        const response = await originalFetch.apply(window, arguments);
+
+        try {
+          const requestTarget = arguments[0];
+          const requestUrl = typeof requestTarget === 'string' ? requestTarget : requestTarget?.url || '';
+          if (String(requestUrl).includes('/api/quote/create')) {
+            response.clone().json().then((data) => {
+              window.__screenPaymentUrl = data?.payment_url || data?.quote?.payment_url || null;
+              updateSuccessPaymentLink();
+            }).catch(() => {});
+          }
+        } catch (err) {
+          console.warn('Payment link capture failed:', err);
+        }
+
+        return response;
+      };
+    })();
+
+    document.addEventListener('DOMContentLoaded', updateSuccessPaymentLink);
+  </script>
+  <script src="app.js?v=3"></script>
+  <script>
+    (function refreshPaymentLinkAfterSuccessRender() {
+      const originalRenderSuccessView = window.renderSuccessView;
+      if (typeof originalRenderSuccessView === 'function') {
+        window.renderSuccessView = function patchedRenderSuccessView() {
+          const result = originalRenderSuccessView.apply(this, arguments);
+          updateSuccessPaymentLink();
+          setTimeout(updateSuccessPaymentLink, 0);
+          return result;
+        };
+      }
+    })();
+  </script>
 </body>
 </html>
