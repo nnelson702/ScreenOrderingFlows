@@ -167,15 +167,21 @@ async function createQuote(request, env) {
     return json({ error: 'Stripe checkout session create failed: ' + summarizeStripeError(checkout.error), quote_id: quote.id, details: checkout.error }, 500);
   }
 
-  const updatedQuote = {
+    const updatedQuote = {
     ...quote,
     stripe_session_id: checkout.data.id,
-    payment_url: checkout.data.url
+    payment_url: checkout.data.url,
+    fulfillment_method: quotePayload.fulfillment_method,
+    delivery_distance_miles: quotePayload.delivery_distance_miles,
+    delivery_fee_cents: quotePayload.delivery_fee_cents
   };
 
   const updated = await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quote.id), {
     stripe_session_id: checkout.data.id,
-    payment_url: checkout.data.url
+    payment_url: checkout.data.url,
+    fulfillment_method: quotePayload.fulfillment_method,
+    delivery_distance_miles: quotePayload.delivery_distance_miles,
+    delivery_fee_cents: quotePayload.delivery_fee_cents
   });
   if (!updated.ok) {
     return json({ error: 'Supabase payment fields update failed', quote_id: quote.id, payment_url: checkout.data.url, details: updated.error }, 500);
