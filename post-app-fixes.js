@@ -108,15 +108,14 @@ function milesBetween(a, b) {
 }
 
 function getCustomerApproxCoords(customerOrZip) {
-  const zip = typeof customerOrZip === 'string'
-    ? customerOrZip
-    : customerOrZip?.zip;
+  const zip = typeof customerOrZip === 'string' ? customerOrZip : customerOrZip?.zip;
   const cleanZip = String(zip || '').replace(/\D/g, '').slice(0, 5);
   return ZIP_COORDS[cleanZip] || null;
 }
 
 function getSelectedStoreCoords() {
-  const store = AppState.store || syncStoreFromDropdown('auto');
+  const selectedStoreId = document.getElementById('storeSelect')?.value;
+  const store = AppState.store || findStoreById(selectedStoreId);
   if (!store) return null;
   return STORE_COORDS[String(store.id)] || getCustomerApproxCoords(store.zip);
 }
@@ -153,12 +152,13 @@ function getFulfillmentMethod() {
   return checked?.value || AppState.fulfillmentMethod || 'pickup';
 }
 
-function setFulfillmentMethod(method) {
+function setFulfillmentMethod(method, options = {}) {
   const cleanMethod = method === 'delivery' ? 'delivery' : 'pickup';
   AppState.fulfillmentMethod = cleanMethod;
   const input = document.querySelector(`input[name="fulfillmentMethod"][value="${cleanMethod}"]`);
   if (input) input.checked = true;
-  updateFulfillmentUi();
+  if (options.updateUi !== false) updateDashboardFulfillmentUi();
+  if (options.render) renderSummary();
 }
 
 function getDeliveryEligibility(subtotal = getLineItemSubtotal()) {
@@ -171,30 +171,31 @@ function getDeliveryEligibility(subtotal = getLineItemSubtotal()) {
   return { method, miles, distanceKnown, withinRadius, minimumMet, available, subtotal };
 }
 
-function ensureFulfillmentSection() {
-  let section = document.getElementById('fulfillmentSection');
+function ensureDashboardFulfillmentSection() {
+  let section = document.getElementById('dashboardFulfillmentSection');
   if (section) return section;
 
-  const storeSelect = document.getElementById('storeSelect');
-  if (!storeSelect || !storeSelect.parentElement) return null;
+  const summaryGrid = document.querySelector('#view-dashboard .summary-grid');
+  if (!summaryGrid) return null;
 
-  section = document.createElement('div');
-  section.id = 'fulfillmentSection';
-  section.className = 'form-field full-width';
+  section = document.createElement('section');
+  section.id = 'dashboardFulfillmentSection';
+  section.className = 'summary-card';
+  section.style.margin = '0 0 1rem 0';
   section.innerHTML = `
-    <label>How would you like to receive your screens?</label>
+    <h3>Pickup or Delivery</h3>
     <div class="inline-options">
       <label><input type="radio" name="fulfillmentMethod" value="pickup" checked /> Pick up at selected store</label>
-      <label><input type="radio" name="fulfillmentMethod" value="delivery" /> Delivery (+$10)</label>
+      <label><input id="deliveryFulfillmentOption" type="radio" name="fulfillmentMethod" value="delivery" /> Delivery (+$10)</label>
     </div>
-    <p id="fulfillmentNote" class="helper-text small">Delivery requires a $35 minimum screen order and must be within 15 miles of the selected store.</p>
+    <p id="dashboardFulfillmentNote" class="helper-text small">Delivery becomes available when the order subtotal is at least $35 and the address is within 15 miles of the selected store.</p>
   `;
-  storeSelect.parentElement.insertAdjacentElement('afterend', section);
+  summaryGrid.insertAdjacentElement('afterend', section);
 
   section.querySelectorAll('input[name="fulfillmentMethod"]').forEach((input) => {
     input.addEventListener('change', () => {
       AppState.fulfillmentMethod = getFulfillmentMethod();
-      updateFulfillmentUi();
+      updateDashboardFulfillmentUi();
       renderSummary();
     });
   });
@@ -202,34 +203,42 @@ function ensureFulfillmentSection() {
   return section;
 }
 
-function updateFulfillmentUi() {
-  ensureFulfillmentSection();
-  const note = document.getElementById('fulfillmentNote');
-  if (!note) return;
+function updateDashboardFulfillmentUi() {
+  ensureDashboardFulfillmentSection();
+  const note = document.getElementById('dashboardFulfillmentNote');
+  const deliveryInput = document.getElementById('deliveryFulfillmentOption');
+  if (!note || !deliveryInput) return;
 
   const eligibility = getDeliveryEligibility();
   const subtotalNeeded = Math.max(0, DELIVERY_MINIMUM_SUBTOTAL - eligibility.subtotal);
   const milesText = eligibility.distanceKnown ? `${eligibility.miles} miles` : 'unknown distance';
 
-  if (eligibility.method === 'pickup') {
-    if (eligibility.distanceKnown && eligibility.withinRadius) {
-      note.textContent = `Pickup selected. Delivery is available for this address if the screen subtotal is at least $35. Estimated distance: ${milesText}.`;
-    } else if (eligibility.distanceKnown) {
-      note.textContent = `Pickup selected. Delivery is not available because this address is outside the 15-mile delivery radius from the selected store. Estimated distance: ${milesText}.`;
-    } else {
-      note.textContent = 'Pickup selected. Delivery requires a $35 minimum screen order and must be within 15 miles of the selected store.';
-    }
+  const deliveryCanBeSelected = eligibility.minimumMet && eligibility.withinRadius;
+  deliveryInput.disabled = !deliveryCanBeSelected;
+
+  if (!deliveryCanBeSelected && eligibility.method === 'delivery') {
+    setFulfillmentMethod('pickup', { updateUi: false });
+  }
+
+  if (!eligibility.minimumMet) {
+    note.textContent = `Delivery becomes available at a $35 screen subtotal. Add ${formatMoney(subtotalNeeded)} more to enable delivery.`;
     return;
   }
 
   if (!eligibility.distanceKnown) {
-    note.textContent = 'Delivery selected, but we cannot verify delivery distance from this ZIP code. Please choose pickup or confirm the ZIP code.';
-  } else if (!eligibility.withinRadius) {
-    note.textContent = `Delivery is not available because this address is outside the 15-mile delivery radius from the selected store. Estimated distance: ${milesText}.`;
-  } else if (!eligibility.minimumMet) {
-    note.textContent = `Delivery selected. Add ${formatMoney(subtotalNeeded)} more in screen subtotal to meet the $35 delivery minimum. Estimated distance: ${milesText}.`;
+    note.textContent = 'Delivery distance could not be verified from this ZIP code. Pickup is allowed only unless the address is corrected.';
+    return;
+  }
+
+  if (!eligibility.withinRadius) {
+    note.textContent = `Outside delivery radius — pickup allowed only. Estimated distance from selected store: ${milesText}. Delivery limit: ${DELIVERY_RADIUS_MILES} miles.`;
+    return;
+  }
+
+  if (getFulfillmentMethod() === 'delivery') {
+    note.textContent = `Delivery selected. $10 delivery fee applied. Estimated distance from selected store: ${milesText}.`;
   } else {
-    note.textContent = `Delivery selected. $10 delivery fee applied. Estimated distance: ${milesText}.`;
+    note.textContent = `Pickup selected. Delivery is available for this order for $10. Estimated distance from selected store: ${milesText}.`;
   }
 }
 
@@ -282,7 +291,7 @@ function setSelectedStore(store, source = 'auto') {
     }
   }
 
-  updateFulfillmentUi();
+  updateDashboardFulfillmentUi();
 }
 
 function syncStoreFromDropdown(source = 'manual') {
@@ -314,8 +323,6 @@ function installStoreAutoSelectBehavior() {
   const select = document.getElementById('storeSelect');
   if (!form || !select) return;
 
-  ensureFulfillmentSection();
-
   const addressFieldIds = ['customerStreet', 'customerCity', 'customerState', 'customerZip'];
   addressFieldIds.forEach((id) => {
     const input = document.getElementById(id);
@@ -323,12 +330,12 @@ function installStoreAutoSelectBehavior() {
     input.addEventListener('input', () => {
       customerStoreManualOverride = false;
       scheduleStoreAutoSelect(false);
-      updateFulfillmentUi();
+      updateDashboardFulfillmentUi();
     });
     input.addEventListener('change', () => {
       customerStoreManualOverride = false;
       scheduleStoreAutoSelect(false);
-      updateFulfillmentUi();
+      updateDashboardFulfillmentUi();
     });
   });
 
@@ -340,12 +347,11 @@ function installStoreAutoSelectBehavior() {
 
   const observer = new MutationObserver(() => {
     if (!customerStoreManualOverride) scheduleStoreAutoSelect(false);
-    updateFulfillmentUi();
+    updateDashboardFulfillmentUi();
   });
   observer.observe(select, { childList: true });
 
   scheduleStoreAutoSelect(false);
-  updateFulfillmentUi();
 }
 
 function handleCustomerSubmit(event) {
@@ -359,7 +365,6 @@ function handleCustomerSubmit(event) {
   }
 
   AppState.customer = customer;
-  AppState.fulfillmentMethod = getFulfillmentMethod();
 
   const selectedStore = syncStoreFromDropdown(customerStoreManualOverride ? 'manual' : 'auto');
   if (selectedStore) {
@@ -372,14 +377,10 @@ function handleCustomerSubmit(event) {
   const stores = getStores();
   if (!AppState.store && stores.length) AppState.store = stores[0];
 
-  const eligibility = getDeliveryEligibility();
-  if (AppState.fulfillmentMethod === 'delivery' && eligibility.distanceKnown && !eligibility.withinRadius) {
-    alert(`Delivery is not available for this address from the selected store. Estimated distance is ${eligibility.miles} miles. Please choose pickup or select a closer store.`);
-    return;
-  }
-
   renderSummary();
   showView('dashboard');
+  ensureDashboardFulfillmentSection();
+  updateDashboardFulfillmentUi();
 }
 
 async function submitQuoteToApi() {
@@ -406,7 +407,7 @@ async function submitQuoteToApi() {
       zip: AppState.store?.zip || null
     },
     fulfillment: {
-      method: eligibility.method,
+      method: getFulfillmentMethod(),
       delivery_distance_miles: eligibility.miles,
       delivery_fee_cents: Math.round(totals.delivery * 100),
       delivery_minimum_cents: DELIVERY_MINIMUM_SUBTOTAL * 100,
@@ -460,6 +461,8 @@ async function submitQuoteToApi() {
 
 function renderSummary() {
   try {
+    updateDashboardFulfillmentUi();
+
     const custEl = $('#summaryCustomer');
     const succCustEl = $('#successCustomer');
     const storeEl = $('#summaryStore');
@@ -510,7 +513,6 @@ function renderSummary() {
     setText($('#taxValue'), formatMoney(totals.tax));
     setText($('#deliveryValue'), formatMoney(totals.delivery));
     setText($('#totalValue'), formatMoney(totals.total));
-    updateFulfillmentUi();
     renderSuccessTotals();
   } catch (err) {
     console.error('Render summary failed:', err);
@@ -608,6 +610,6 @@ async function handleSubmitQuote() {
 
 document.addEventListener('DOMContentLoaded', () => {
   installStoreAutoSelectBehavior();
-  ensureFulfillmentSection();
-  updateFulfillmentUi();
+  ensureDashboardFulfillmentSection();
+  updateDashboardFulfillmentUi();
 });
