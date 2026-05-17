@@ -425,7 +425,7 @@ function quoteSummaryHtml(quote, items) {
       <td>${esc(item.height_display)}</td>
       <td>${esc(item.frame_type)} / ${esc(item.frame_color)}</td>
       <td>${esc(item.material_type)} / ${esc(item.material_color)}</td>
-      <td>${money(item.line_total_cents)}</td>
+      <td style="text-align:right;">${money(item.line_total_cents)}</td>
     </tr>
   `).join('');
 
@@ -433,14 +433,49 @@ function quoteSummaryHtml(quote, items) {
     <h3>Quote Summary</h3>
     <p><strong>Quote ID:</strong> ${esc(quote.id)}</p>
     <p><strong>Status:</strong> ${esc(quote.status)}</p>
-    <p><strong>Total:</strong> ${money(quote.total_cents)}</p>
+
+    <h3>Quote Totals</h3>
+    <table cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:320px;max-width:100%;font-size:14px;margin-bottom:14px;">
+      <tbody>
+        <tr>
+          <td style="border-bottom:1px solid #ddd;">Subtotal</td>
+          <td style="border-bottom:1px solid #ddd;text-align:right;">${money(quote.subtotal_cents)}</td>
+        </tr>
+        <tr>
+          <td style="border-bottom:1px solid #ddd;">Tax</td>
+          <td style="border-bottom:1px solid #ddd;text-align:right;">${money(quote.tax_cents)}</td>
+        </tr>
+        <tr>
+          <td style="border-bottom:1px solid #ddd;">Delivery</td>
+          <td style="border-bottom:1px solid #ddd;text-align:right;">${money(quote.delivery_cents)}</td>
+        </tr>
+        <tr>
+          <td style="font-weight:bold;">Total</td>
+          <td style="font-weight:bold;text-align:right;">${money(quote.total_cents)}</td>
+        </tr>
+      </tbody>
+    </table>
+
     <h3>Customer</h3>
     <p>${esc(quote.customer_name)}<br>${esc(quote.customer_street)}<br>${esc(quote.customer_city)}, ${esc(quote.customer_state)} ${esc(quote.customer_zip)}<br>${esc(quote.customer_phone)}<br>${esc(quote.customer_email)}</p>
+
     <h3>Store</h3>
     <p>${esc(quote.store_name)}<br>${esc(quote.store_phone || '')}<br>${esc(quote.store_email || '')}</p>
+
     <h3>Screens</h3>
     <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:14px;">
-      <thead><tr><th>#</th><th>Type</th><th>Qty</th><th>Width</th><th>Height</th><th>Frame</th><th>Material</th><th>Line</th></tr></thead>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Type</th>
+          <th>Qty</th>
+          <th>Width</th>
+          <th>Height</th>
+          <th>Frame</th>
+          <th>Material</th>
+          <th>Line</th>
+        </tr>
+      </thead>
       <tbody>${rows}</tbody>
     </table>
   `;
@@ -451,6 +486,11 @@ function quoteSummaryText(quote, items) {
   const lines = [
     'Quote ID: ' + quote.id,
     'Status: ' + quote.status,
+    '',
+    'Quote Totals:',
+    'Subtotal: ' + money(quote.subtotal_cents),
+    'Tax: ' + money(quote.tax_cents),
+    'Delivery: ' + money(quote.delivery_cents),
     'Total: ' + money(quote.total_cents),
     'Screen count: ' + screenCount,
     '',
@@ -475,7 +515,6 @@ function quoteSummaryText(quote, items) {
 
   return lines.join('\n');
 }
-
 function emailShell(titleText, bodyHtml) {
   return `
     <div style="font-family:Arial,sans-serif;line-height:1.45;color:#222;max-width:780px;margin:0 auto;">
