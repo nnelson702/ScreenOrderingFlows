@@ -167,7 +167,7 @@ async function createQuote(request, env) {
     return json({ error: 'Stripe checkout session create failed: ' + summarizeStripeError(checkout.error), quote_id: quote.id, details: checkout.error }, 500);
   }
 
-    const updatedQuote = {
+  const updatedQuote = {
     ...quote,
     stripe_session_id: checkout.data.id,
     payment_url: checkout.data.url,
