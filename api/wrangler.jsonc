@@ -8,6 +8,6 @@
   },
   "vars": {
     "ALLOWED_ORIGINS": "https://screen-ordering-flow.nnelson.workers.dev",
-    "RESEND_FROM": "Helpful ACE Screen Quotes <onboarding@resend.dev>"
+    "RESEND_FROM": "Helpful ACE Screen Quotes <quotes@skyecos.com>"
   }
 }
