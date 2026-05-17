@@ -80,6 +80,19 @@ async function createQuote(request, env) {
   const total = cents(totals.total_cents) || subtotal + delivery + tax;
   if (total <= 0) return json({ error: 'Computed total invalid' }, 400);
 
+  const fulfillment = body.fulfillment || {};
+  const fulfillmentMethod = clean(
+    body.fulfillment_method ||
+    fulfillment.fulfillment_method ||
+    fulfillment.method ||
+    'pickup'
+  ).toLowerCase();
+
+  const rawDeliveryDistanceMiles =
+    body.delivery_distance_miles ??
+    fulfillment.delivery_distance_miles ??
+    null;
+
   const quotePayload = {
     status: 'submitted',
     view_token: token(40),
@@ -101,7 +114,17 @@ async function createQuote(request, env) {
     subtotal_cents: subtotal,
     delivery_cents: delivery,
     tax_cents: tax,
-    total_cents: total
+    total_cents: total,
+    fulfillment_method: fulfillmentMethod,
+    delivery_distance_miles:
+      rawDeliveryDistanceMiles == null || rawDeliveryDistanceMiles === ''
+        ? null
+        : Number(rawDeliveryDistanceMiles),
+    delivery_fee_cents: cents(
+      body.delivery_fee_cents ??
+      fulfillment.delivery_fee_cents ??
+      delivery
+    )
   };
 
   const insertedQuote = await sbInsert(env, 'quotes', quotePayload);
