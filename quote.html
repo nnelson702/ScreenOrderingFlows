@@ -7,12 +7,14 @@
   <style>
     :root {
       --ace-red: #b01c2e;
+      --ace-red-dark: #8f1323;
       --ace-red-bright: #e72832;
       --ink: #161616;
       --muted: #5f6368;
       --line: #d9dde3;
       --card: #ffffff;
       --bg: #f3f4f6;
+      --soft-red: #fff4f5;
     }
     * { box-sizing: border-box; }
     body {
@@ -57,61 +59,118 @@
     }
     .quote-header {
       position: relative;
-      height: 1.35in;
-      display: grid;
-      grid-template-columns: 1.5in 1fr;
-      align-items: center;
-      padding: 0 0.35in;
-      color: white;
+      min-height: 1.22in;
+      padding: 0.28in 0.42in 0.22in;
       background: white;
     }
-    .quote-header::before {
+    .brand-panel {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1.08in 1fr auto;
+      align-items: center;
+      gap: 0.18in;
+      min-height: 0.86in;
+      padding: 0.14in 0.22in 0.14in 0.16in;
+      background: linear-gradient(90deg, var(--ace-red-bright), var(--ace-red));
+      border-radius: 18px;
+      color: white;
+      overflow: visible;
+      box-shadow: 0 5px 16px rgba(176, 28, 46, 0.18);
+    }
+    .brand-panel::before,
+    .brand-panel::after {
       content: "";
       position: absolute;
-      left: 1.45in;
-      right: 0.25in;
-      top: 0.27in;
-      height: 0.82in;
-      background: var(--ace-red-bright);
-      border-top: 7px solid white;
-      border-bottom: 7px solid white;
-      outline: 5px solid var(--ace-red-bright);
+      left: 1.14in;
+      right: 0.18in;
+      height: 3px;
+      background: rgba(255,255,255,0.86);
     }
-    .quote-header img {
+    .brand-panel::before { top: 0.11in; }
+    .brand-panel::after { bottom: 0.11in; }
+    .logo-wrap {
       position: relative;
       z-index: 2;
-      width: 1.28in;
-      max-height: 1.15in;
+      width: 1.02in;
+      height: 1.02in;
+      margin-left: -0.02in;
+      border-radius: 50%;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 4px solid #fff;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.22);
+    }
+    .logo-wrap img {
+      width: 0.92in;
+      max-height: 0.92in;
       object-fit: contain;
-      background: white;
       border-radius: 50%;
     }
     .header-text {
       position: relative;
       z-index: 2;
-      padding-left: 0.2in;
-      text-shadow: 0 1px 1px rgba(0,0,0,0.18);
+      min-width: 0;
     }
     .header-title {
-      font-size: 26px;
+      font-size: 27px;
       font-weight: 800;
       margin: 0;
+      line-height: 1.05;
+      letter-spacing: -0.01em;
     }
     .header-subtitle {
-      margin: 3px 0 0;
+      margin: 5px 0 0;
       font-size: 14px;
       font-weight: 700;
     }
-    .content { padding: 0.18in 0.42in 0.42in; }
+    .header-tag {
+      position: relative;
+      z-index: 2;
+      border: 1px solid rgba(255,255,255,0.55);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+      background: rgba(255,255,255,0.12);
+    }
+    .content { padding: 0.08in 0.42in 0.42in; }
+    .quote-id-line {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 400;
+    }
+    .quote-id-line span {
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #6b7280;
+    }
+    .quote-id-line strong {
+      font-size: 11px;
+      font-weight: 500;
+      color: #374151;
+      word-break: break-word;
+    }
     .status-strip {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 10px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       border: 1px solid var(--line);
       border-radius: 14px;
       background: #fafafa;
-      padding: 12px;
+      padding: 10px 12px;
+      min-height: 0.56in;
     }
     .status-item span {
       display: block;
@@ -131,14 +190,14 @@
       display: grid;
       grid-template-columns: 1fr 1fr 0.95fr;
       gap: 12px;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
     .card {
       border: 1px solid var(--line);
       border-radius: 14px;
       background: var(--card);
       padding: 13px 14px;
-      min-height: 1.3in;
+      min-height: 1.25in;
     }
     .card h2,
     .section h2 {
@@ -164,8 +223,8 @@
     .section {
       border: 1px solid var(--line);
       border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 16px;
+      padding: 13px 14px;
+      margin-bottom: 14px;
       background: white;
     }
     .fulfillment {
@@ -205,18 +264,35 @@
     .payment-box {
       border: 2px solid var(--ace-red);
       border-radius: 14px;
-      padding: 14px;
-      background: #fff8f9;
-      margin-bottom: 16px;
+      padding: 14px 16px;
+      background: var(--soft-red);
+      margin-bottom: 14px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: center;
     }
     .payment-box h2 { margin: 0 0 6px; font-size: 16px; }
-    .payment-url {
-      display: block;
-      color: var(--ace-red);
-      font-weight: 700;
-      word-break: break-all;
-      font-size: 10.5px;
-      margin-top: 6px;
+    .payment-box p { margin: 0; font-size: 13px; }
+    .pay-now-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.25in;
+      padding: 12px 18px;
+      border-radius: 999px;
+      background: var(--ace-red);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 800;
+      text-decoration: none;
+      white-space: nowrap;
+      box-shadow: 0 3px 8px rgba(176,28,46,0.22);
+    }
+    .pay-now-button.disabled {
+      pointer-events: none;
+      background: #9aa0a6;
+      box-shadow: none;
     }
     .policy {
       font-size: 10.5px;
@@ -243,6 +319,8 @@
         margin: 0;
         box-shadow: none;
       }
+      .brand-panel { box-shadow: none; }
+      .pay-now-button { box-shadow: none; }
       @page { size: letter portrait; margin: 0.25in; }
       .section, .card, .payment-box { break-inside: avoid; }
       tr { break-inside: avoid; }
@@ -260,16 +338,22 @@
 
   <article id="quotePage" class="page" hidden>
     <header class="quote-header">
-      <img src="skye_ace_logo.png" alt="Skye ACE Hardware" />
-      <div class="header-text">
-        <h1 class="header-title">Screen Tool</h1>
-        <p class="header-subtitle">Custom Window & Door Screen Quote</p>
+      <div class="brand-panel">
+        <div class="logo-wrap">
+          <img src="skye_ace_logo.png" alt="Skye ACE Hardware" />
+        </div>
+        <div class="header-text">
+          <h1 class="header-title">Screen Tool</h1>
+          <p class="header-subtitle">Custom Window &amp; Door Screen Quote</p>
+        </div>
+        <div class="header-tag">Helpful ACE</div>
       </div>
     </header>
 
     <main class="content">
+      <div class="quote-id-line"><span>Quote ID</span><strong id="quoteId"></strong></div>
+
       <section class="status-strip">
-        <div class="status-item"><span>Quote ID</span><strong id="quoteId"></strong></div>
         <div class="status-item"><span>Status</span><strong id="quoteStatus"></strong></div>
         <div class="status-item"><span>Created</span><strong id="quoteCreated"></strong></div>
         <div class="status-item"><span>Valid Through</span><strong id="quoteExpires"></strong></div>
@@ -323,9 +407,11 @@
       </section>
 
       <section class="payment-box">
-        <h2>Payment Required Before Production</h2>
-        <div>Review your quote for accuracy. To place the order, pay online using the link below or visit the selected store to pay in person.</div>
-        <a id="paymentLink" class="payment-url" target="_blank" rel="noopener"></a>
+        <div>
+          <h2>Payment Required Before Production</h2>
+          <p>Review your quote for accuracy. To place the order, pay online or visit the selected store to pay in person.</p>
+        </div>
+        <a id="paymentLink" class="pay-now-button" target="_blank" rel="noopener">Pay Now</a>
       </section>
 
       <section class="policy">
@@ -438,8 +524,10 @@
       `).join('');
 
       const paymentUrl = quote.payment_url || '';
-      $('paymentLink').href = paymentUrl || '#';
-      $('paymentLink').textContent = paymentUrl || 'Payment link not available';
+      const paymentLink = $('paymentLink');
+      paymentLink.href = paymentUrl || '#';
+      paymentLink.textContent = paymentUrl ? 'Pay Now' : 'Payment Link Unavailable';
+      paymentLink.classList.toggle('disabled', !paymentUrl);
 
       $('loading').hidden = true;
       $('quotePage').hidden = false;
