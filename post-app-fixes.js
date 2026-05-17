@@ -3,6 +3,10 @@
 
 const ACTIVE_TAX_RATE = 0.08375; // Clark County, NV sales/use tax rate.
 
+let customerStoreManualOverride = false;
+let programmaticStoreSelectUpdate = false;
+let storeAutoSelectTimer = null;
+
 const STORE_COORDS = {
   '18228': { lat: 36.1006, lng: -115.1060 }, // Helpful ACE - Tropicana
   '18507': { lat: 36.0137, lng: -115.0546 }, // Helpful ACE - Horizon Ridge
@@ -73,6 +77,14 @@ function getQuoteTotals() {
   return { subtotal, tax, delivery, total };
 }
 
+function getStores() {
+  return normalizeObjectArray(AppState.config?.stores);
+}
+
+function findStoreById(storeId) {
+  return getStores().find((store) => String(store.id) === String(storeId)) || null;
+}
+
 function milesBetween(a, b) {
   if (!a || !b) return Infinity;
   const R = 3958.8;
@@ -94,7 +106,7 @@ function getCustomerApproxCoords(customerOrZip) {
 }
 
 function autoSelectStore(customerOrZip) {
-  const stores = normalizeObjectArray(AppState.config?.stores);
+  const stores = getStores();
   const customerCoords = getCustomerApproxCoords(customerOrZip);
   if (!stores.length) return null;
   if (!customerCoords) return stores[0] || null;
@@ -124,18 +136,106 @@ function ensureStoreAutoNote() {
   return note;
 }
 
+function getCustomerFormSnapshot() {
+  const form = document.getElementById('customerForm');
+  if (!form) return null;
+  return {
+    name: form.customerName?.value?.trim() || '',
+    street: form.customerStreet?.value?.trim() || '',
+    city: form.customerCity?.value?.trim() || '',
+    state: form.customerState?.value?.trim().toUpperCase() || '',
+    zip: form.customerZip?.value?.trim() || '',
+    email: form.customerEmail?.value?.trim() || '',
+    phone: form.customerPhone?.value?.trim() || ''
+  };
+}
+
+function setSelectedStore(store, source = 'auto') {
+  if (!store) return;
+  const matchingStore = findStoreById(store.id) || store;
+  AppState.store = matchingStore;
+
+  const select = document.getElementById('storeSelect');
+  if (select && matchingStore.id) {
+    programmaticStoreSelectUpdate = true;
+    select.value = matchingStore.id;
+    programmaticStoreSelectUpdate = false;
+  }
+
+  const note = ensureStoreAutoNote();
+  if (!note) return;
+
+  if (source === 'manual') {
+    note.textContent = `Selected store: ${matchingStore.name}. This store will be used for the quote unless you change it.`;
+    return;
+  }
+
+  note.textContent = store.estimatedDistanceMiles
+    ? `Closest available store selected automatically: ${matchingStore.name} — approximately ${store.estimatedDistanceMiles} miles by area estimate. You can change this selection.`
+    : `Closest available store selected automatically: ${matchingStore.name}. You can change this selection.`;
+}
+
+function syncStoreFromDropdown(source = 'manual') {
+  const select = document.getElementById('storeSelect');
+  if (!select || !select.value) return null;
+  const selectedStore = findStoreById(select.value);
+  if (selectedStore) setSelectedStore(selectedStore, source);
+  return selectedStore;
+}
+
+function runStoreAutoSelect(force = false) {
+  if (customerStoreManualOverride && !force) return;
+  const customer = getCustomerFormSnapshot();
+  if (!customer) return;
+  const cleanZip = String(customer.zip || '').replace(/\D/g, '').slice(0, 5);
+  if (cleanZip.length < 5) return;
+
+  const nearest = autoSelectStore(customer);
+  if (nearest) setSelectedStore(nearest, 'auto');
+}
+
+function scheduleStoreAutoSelect(force = false) {
+  clearTimeout(storeAutoSelectTimer);
+  storeAutoSelectTimer = setTimeout(() => runStoreAutoSelect(force), 150);
+}
+
+function installStoreAutoSelectBehavior() {
+  const form = document.getElementById('customerForm');
+  const select = document.getElementById('storeSelect');
+  if (!form || !select) return;
+
+  const addressFieldIds = ['customerStreet', 'customerCity', 'customerState', 'customerZip'];
+  addressFieldIds.forEach((id) => {
+    const input = document.getElementById(id);
+    if (!input) return;
+    input.addEventListener('input', () => {
+      customerStoreManualOverride = false;
+      scheduleStoreAutoSelect(false);
+    });
+    input.addEventListener('change', () => {
+      customerStoreManualOverride = false;
+      scheduleStoreAutoSelect(false);
+    });
+  });
+
+  select.addEventListener('change', () => {
+    if (programmaticStoreSelectUpdate) return;
+    customerStoreManualOverride = true;
+    syncStoreFromDropdown('manual');
+  });
+
+  const observer = new MutationObserver(() => {
+    if (!customerStoreManualOverride) scheduleStoreAutoSelect(false);
+  });
+  observer.observe(select, { childList: true });
+
+  scheduleStoreAutoSelect(false);
+}
+
 function handleCustomerSubmit(event) {
   event.preventDefault();
-  const form = event.target;
-  const customer = {
-    name: form.customerName.value.trim(),
-    street: form.customerStreet.value.trim(),
-    city: form.customerCity.value.trim(),
-    state: form.customerState.value.trim().toUpperCase(),
-    zip: form.customerZip.value.trim(),
-    email: form.customerEmail.value.trim(),
-    phone: form.customerPhone.value.trim()
-  };
+  const customer = getCustomerFormSnapshot();
+  if (!customer) return;
 
   if (!customer.name || !customer.email) {
     alert('Please provide at least a name and email.');
@@ -143,23 +243,18 @@ function handleCustomerSubmit(event) {
   }
 
   AppState.customer = customer;
-  const stores = normalizeObjectArray(AppState.config?.stores);
-  if (stores.length) {
+
+  const selectedStore = syncStoreFromDropdown(customerStoreManualOverride ? 'manual' : 'auto');
+  if (selectedStore) {
+    AppState.store = selectedStore;
+  } else {
     const nearest = autoSelectStore(customer);
-    if (nearest) {
-      AppState.store = stores.find((store) => String(store.id) === String(nearest.id)) || nearest;
-      const sel = document.getElementById('storeSelect');
-      if (sel) sel.value = AppState.store.id;
-      const note = ensureStoreAutoNote();
-      if (note) {
-        note.textContent = nearest.estimatedDistanceMiles
-          ? `Closest available store selected automatically: ${nearest.name} — approximately ${nearest.estimatedDistanceMiles} miles by area estimate. You can change this selection.`
-          : `Closest available store selected automatically: ${nearest.name}. You can change this selection.`;
-      }
-    }
+    if (nearest) setSelectedStore(nearest, 'auto');
   }
 
+  const stores = getStores();
   if (!AppState.store && stores.length) AppState.store = stores[0];
+
   renderSummary();
   showView('dashboard');
 }
@@ -333,3 +428,7 @@ function renderSuccessView() {
   }
   showView('success');
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  installStoreAutoSelectBehavior();
+});
