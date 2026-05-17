@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Screen Quote | Helpful ACE</title>
+  <style>
+    :root {
+      --ace-red: #b01c2e;
+      --ace-red-bright: #e72832;
+      --ink: #161616;
+      --muted: #5f6368;
+      --line: #d9dde3;
+      --card: #ffffff;
+      --bg: #f3f4f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.35;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,0.96);
+      border-bottom: 1px solid var(--line);
+    }
+    .btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-primary { background: var(--ace-red); color: white; }
+    .btn-secondary { background: #e8eaed; color: #202124; }
+    .page {
+      width: 8.5in;
+      min-height: 11in;
+      margin: 24px auto;
+      background: white;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.14);
+      overflow: hidden;
+    }
+    .quote-header {
+      position: relative;
+      height: 1.35in;
+      display: grid;
+      grid-template-columns: 1.5in 1fr;
+      align-items: center;
+      padding: 0 0.35in;
+      color: white;
+      background: white;
+    }
+    .quote-header::before {
+      content: "";
+      position: absolute;
+      left: 1.45in;
+      right: 0.25in;
+      top: 0.27in;
+      height: 0.82in;
+      background: var(--ace-red-bright);
+      border-top: 7px solid white;
+      border-bottom: 7px solid white;
+      outline: 5px solid var(--ace-red-bright);
+    }
+    .quote-header img {
+      position: relative;
+      z-index: 2;
+      width: 1.28in;
+      max-height: 1.15in;
+      object-fit: contain;
+      background: white;
+      border-radius: 50%;
+    }
+    .header-text {
+      position: relative;
+      z-index: 2;
+      padding-left: 0.2in;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.18);
+    }
+    .header-title {
+      font-size: 26px;
+      font-weight: 800;
+      margin: 0;
+    }
+    .header-subtitle {
+      margin: 3px 0 0;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .content { padding: 0.18in 0.42in 0.42in; }
+    .status-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fafafa;
+      padding: 12px;
+    }
+    .status-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+    }
+    .status-item strong {
+      display: block;
+      font-size: 12px;
+      margin-top: 3px;
+      word-break: break-word;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr 0.95fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--card);
+      padding: 13px 14px;
+      min-height: 1.3in;
+    }
+    .card h2,
+    .section h2 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      line-height: 1.1;
+    }
+    .card p { margin: 0; font-size: 12px; }
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12px;
+      margin: 3px 0;
+    }
+    .totals-row.total {
+      margin-top: 7px;
+      padding-top: 7px;
+      border-top: 1px solid var(--line);
+      font-weight: 800;
+      font-size: 14px;
+    }
+    .section {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 16px;
+      background: white;
+    }
+    .fulfillment {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+    }
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      background: #fce8ea;
+      color: var(--ace-red);
+      white-space: nowrap;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10.5px;
+    }
+    th {
+      text-align: left;
+      background: #eef0f3;
+      border: 1px solid var(--line);
+      padding: 6px;
+      font-size: 10px;
+    }
+    td {
+      border: 1px solid var(--line);
+      padding: 6px;
+      vertical-align: top;
+    }
+    .money { text-align: right; white-space: nowrap; }
+    .payment-box {
+      border: 2px solid var(--ace-red);
+      border-radius: 14px;
+      padding: 14px;
+      background: #fff8f9;
+      margin-bottom: 16px;
+    }
+    .payment-box h2 { margin: 0 0 6px; font-size: 16px; }
+    .payment-url {
+      display: block;
+      color: var(--ace-red);
+      font-weight: 700;
+      word-break: break-all;
+      font-size: 10.5px;
+      margin-top: 6px;
+    }
+    .policy {
+      font-size: 10.5px;
+      color: #333;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+    .muted { color: var(--muted); }
+    .loading, .error {
+      width: 8.5in;
+      margin: 40px auto;
+      padding: 30px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.14);
+    }
+    .error { border-left: 6px solid var(--ace-red); }
+    @media print {
+      body { background: white; }
+      .toolbar { display: none; }
+      .page {
+        width: auto;
+        min-height: auto;
+        margin: 0;
+        box-shadow: none;
+      }
+      @page { size: letter portrait; margin: 0.25in; }
+      .section, .card, .payment-box { break-inside: avoid; }
+      tr { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button class="btn btn-primary" onclick="window.print()">Download / Save PDF</button>
+    <button class="btn btn-secondary" onclick="location.reload()">Refresh Quote</button>
+  </div>
+
+  <div id="loading" class="loading">Loading quote...</div>
+  <div id="error" class="error" hidden></div>
+
+  <article id="quotePage" class="page" hidden>
+    <header class="quote-header">
+      <img src="skye_ace_logo.png" alt="Skye ACE Hardware" />
+      <div class="header-text">
+        <h1 class="header-title">Screen Tool</h1>
+        <p class="header-subtitle">Custom Window & Door Screen Quote</p>
+      </div>
+    </header>
+
+    <main class="content">
+      <section class="status-strip">
+        <div class="status-item"><span>Quote ID</span><strong id="quoteId"></strong></div>
+        <div class="status-item"><span>Status</span><strong id="quoteStatus"></strong></div>
+        <div class="status-item"><span>Created</span><strong id="quoteCreated"></strong></div>
+        <div class="status-item"><span>Valid Through</span><strong id="quoteExpires"></strong></div>
+      </section>
+
+      <section class="cards">
+        <div class="card">
+          <h2>Customer</h2>
+          <p id="customerBlock"></p>
+        </div>
+        <div class="card">
+          <h2>Selected Store</h2>
+          <p id="storeBlock"></p>
+        </div>
+        <div class="card">
+          <h2>Quote Totals</h2>
+          <div class="totals-row"><span>Subtotal</span><strong id="subtotal"></strong></div>
+          <div class="totals-row"><span>Tax</span><strong id="tax"></strong></div>
+          <div class="totals-row"><span>Delivery</span><strong id="delivery"></strong></div>
+          <div class="totals-row total"><span>Total</span><strong id="total"></strong></div>
+        </div>
+      </section>
+
+      <section class="section fulfillment">
+        <div>
+          <h2>Pickup / Delivery</h2>
+          <div id="fulfillmentDetails" class="muted"></div>
+        </div>
+        <div class="pill" id="fulfillmentPill"></div>
+      </section>
+
+      <section class="section">
+        <h2>Screens on this quote</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Type</th>
+              <th>Qty</th>
+              <th>Width</th>
+              <th>Height</th>
+              <th>Frame</th>
+              <th>Material</th>
+              <th>Crossbar</th>
+              <th>Hardware</th>
+              <th>Line Price</th>
+            </tr>
+          </thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+      </section>
+
+      <section class="payment-box">
+        <h2>Payment Required Before Production</h2>
+        <div>Review your quote for accuracy. To place the order, pay online using the link below or visit the selected store to pay in person.</div>
+        <a id="paymentLink" class="payment-url" target="_blank" rel="noopener"></a>
+      </section>
+
+      <section class="policy">
+        <strong>Important:</strong> Once payment is received, production on your order will begin and the order can no longer be cancelled or modified. Quotes are valid for 30 days from the quote creation date.
+      </section>
+    </main>
+  </article>
+
+  <script>
+    const API_BASE_URL = 'https://screen-ordering-api.nnelson.workers.dev';
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token') || params.get('quote') || params.get('view_token');
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const money = (cents) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format((Number(cents) || 0) / 100);
+    const dateFmt = (value) => {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
+    };
+    const title = (value) => {
+      const s = String(value || '').trim();
+      return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+    };
+
+    function itemCrossbar(item) {
+      if (!item.crossbar_needed) return 'None';
+      const parts = [];
+      if (item.crossbar_orientation) parts.push(item.crossbar_orientation);
+      if (item.crossbar_distance_display) parts.push('@ ' + item.crossbar_distance_display);
+      return parts.join(' ') || 'Yes';
+    }
+
+    function itemHardware(item) {
+      if (item.type === 'door') {
+        const parts = [];
+        if (item.handle_orientation) parts.push('Handle: ' + item.handle_orientation);
+        if (item.handle_height_display) parts.push('@ ' + item.handle_height_display);
+        if (item.roller_type) parts.push('Rollers: ' + item.roller_type);
+        return parts.join('; ') || '-';
+      }
+      if (!item.hardware_json) return '-';
+      if (Array.isArray(item.hardware_json)) {
+        return item.hardware_json.map((h) => `${h.label || h.typeId || 'Hardware'} x${h.qty || 1} ${h.side || ''}`.trim()).join('; ');
+      }
+      return String(item.hardware_json);
+    }
+
+    function fulfillmentLabel(quote) {
+      const method = String(quote.fulfillment_method || '').toLowerCase();
+      if (method === 'delivery' || Number(quote.delivery_cents) > 0) return 'Delivery';
+      return 'Pickup';
+    }
+
+    function render(data) {
+      const quote = data.quote || {};
+      const items = data.items || [];
+      $('quoteId').textContent = quote.id || '';
+      $('quoteStatus').textContent = title(quote.status || 'submitted');
+      $('quoteCreated').textContent = dateFmt(quote.created_at);
+      $('quoteExpires').textContent = dateFmt(quote.validity_expires_at);
+
+      $('customerBlock').innerHTML = [
+        quote.customer_name,
+        quote.customer_street,
+        [quote.customer_city, quote.customer_state, quote.customer_zip].filter(Boolean).join(', ').replace(', ' + quote.customer_zip, ' ' + quote.customer_zip),
+        quote.customer_phone,
+        quote.customer_email
+      ].filter(Boolean).map(esc).join('<br>');
+
+      $('storeBlock').innerHTML = [
+        quote.store_name,
+        quote.store_street,
+        [quote.store_city, quote.store_state, quote.store_zip].filter(Boolean).join(', ').replace(', ' + quote.store_zip, ' ' + quote.store_zip),
+        quote.store_phone,
+        quote.store_email
+      ].filter(Boolean).map(esc).join('<br>');
+
+      $('subtotal').textContent = money(quote.subtotal_cents);
+      $('tax').textContent = money(quote.tax_cents);
+      $('delivery').textContent = money(quote.delivery_cents);
+      $('total').textContent = money(quote.total_cents);
+
+      const fLabel = fulfillmentLabel(quote);
+      $('fulfillmentPill').textContent = fLabel;
+      const fDetails = [];
+      if (fLabel === 'Delivery') {
+        fDetails.push('Delivery fee: ' + money(quote.delivery_cents));
+        if (quote.delivery_distance_miles != null) fDetails.push('Estimated distance from selected store: ' + quote.delivery_distance_miles + ' miles');
+      } else {
+        fDetails.push('Pickup at selected store.');
+      }
+      $('fulfillmentDetails').textContent = fDetails.join(' | ');
+
+      $('itemsBody').innerHTML = items.map((item, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${esc(title(item.type))}</td>
+          <td>${esc(item.qty)}</td>
+          <td>${esc(item.width_display)}</td>
+          <td>${esc(item.height_display)}</td>
+          <td>${esc(item.frame_type)} / ${esc(item.frame_color)}</td>
+          <td>${esc(item.material_type)} / ${esc(item.material_color)}</td>
+          <td>${esc(itemCrossbar(item))}</td>
+          <td>${esc(itemHardware(item))}</td>
+          <td class="money">${money(item.line_total_cents)}</td>
+        </tr>
+      `).join('');
+
+      const paymentUrl = quote.payment_url || '';
+      $('paymentLink').href = paymentUrl || '#';
+      $('paymentLink').textContent = paymentUrl || 'Payment link not available';
+
+      $('loading').hidden = true;
+      $('quotePage').hidden = false;
+      document.title = `Screen Quote ${quote.id || ''} | Helpful ACE`;
+    }
+
+    async function loadQuote() {
+      if (!token) throw new Error('Missing quote token. Please use the quote link from your email.');
+      const res = await fetch(`${API_BASE_URL}/api/quote/view/${encodeURIComponent(token)}`);
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Quote could not be loaded.');
+      render(data);
+    }
+
+    loadQuote().catch((err) => {
+      $('loading').hidden = true;
+      $('error').hidden = false;
+      $('error').textContent = err.message || 'Quote could not be loaded.';
+    });
+  </script>
+</body>
+</html>
