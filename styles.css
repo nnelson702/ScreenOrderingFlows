@@ -568,3 +568,8 @@ textarea {
 }
 
 #crossbarDecision { max-width: 320px; }
+
+#successPaymentLink {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
