@@ -2,10 +2,15 @@
 // Targeted front-end corrections loaded after app.js and before DOMContentLoaded.
 
 const ACTIVE_TAX_RATE = 0.08375; // Clark County, NV sales/use tax rate.
+const DELIVERY_FEE = 10;
+const DELIVERY_MINIMUM_SUBTOTAL = 35;
+const DELIVERY_RADIUS_MILES = 15;
 
 let customerStoreManualOverride = false;
 let programmaticStoreSelectUpdate = false;
 let storeAutoSelectTimer = null;
+
+if (!AppState.fulfillmentMethod) AppState.fulfillmentMethod = 'pickup';
 
 const STORE_COORDS = {
   '18228': { lat: 36.1006, lng: -115.1060 }, // Helpful ACE - Tropicana
@@ -69,10 +74,15 @@ function getActiveTaxRate() {
   return ACTIVE_TAX_RATE;
 }
 
+function getLineItemSubtotal() {
+  return AppState.lineItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
+}
+
 function getQuoteTotals() {
-  const subtotal = AppState.lineItems.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
+  const subtotal = getLineItemSubtotal();
+  const eligibility = getDeliveryEligibility(subtotal);
+  const delivery = eligibility.method === 'delivery' && eligibility.available ? DELIVERY_FEE : 0;
   const tax = roundCurrency(subtotal * getActiveTaxRate());
-  const delivery = 0;
   const total = roundCurrency(subtotal + tax + delivery);
   return { subtotal, tax, delivery, total };
 }
@@ -105,6 +115,20 @@ function getCustomerApproxCoords(customerOrZip) {
   return ZIP_COORDS[cleanZip] || null;
 }
 
+function getSelectedStoreCoords() {
+  const store = AppState.store || syncStoreFromDropdown('auto');
+  if (!store) return null;
+  return STORE_COORDS[String(store.id)] || getCustomerApproxCoords(store.zip);
+}
+
+function getCustomerToSelectedStoreMiles() {
+  const customer = AppState.customer || getCustomerFormSnapshot();
+  const customerCoords = getCustomerApproxCoords(customer);
+  const storeCoords = getSelectedStoreCoords();
+  const miles = milesBetween(customerCoords, storeCoords);
+  return Number.isFinite(miles) ? Math.round(miles * 10) / 10 : null;
+}
+
 function autoSelectStore(customerOrZip) {
   const stores = getStores();
   const customerCoords = getCustomerApproxCoords(customerOrZip);
@@ -122,6 +146,91 @@ function autoSelectStore(customerOrZip) {
     }
   });
   return best || stores[0] || null;
+}
+
+function getFulfillmentMethod() {
+  const checked = document.querySelector('input[name="fulfillmentMethod"]:checked');
+  return checked?.value || AppState.fulfillmentMethod || 'pickup';
+}
+
+function setFulfillmentMethod(method) {
+  const cleanMethod = method === 'delivery' ? 'delivery' : 'pickup';
+  AppState.fulfillmentMethod = cleanMethod;
+  const input = document.querySelector(`input[name="fulfillmentMethod"][value="${cleanMethod}"]`);
+  if (input) input.checked = true;
+  updateFulfillmentUi();
+}
+
+function getDeliveryEligibility(subtotal = getLineItemSubtotal()) {
+  const method = getFulfillmentMethod();
+  const miles = getCustomerToSelectedStoreMiles();
+  const distanceKnown = typeof miles === 'number';
+  const withinRadius = distanceKnown && miles <= DELIVERY_RADIUS_MILES;
+  const minimumMet = subtotal >= DELIVERY_MINIMUM_SUBTOTAL;
+  const available = withinRadius && minimumMet;
+  return { method, miles, distanceKnown, withinRadius, minimumMet, available, subtotal };
+}
+
+function ensureFulfillmentSection() {
+  let section = document.getElementById('fulfillmentSection');
+  if (section) return section;
+
+  const storeSelect = document.getElementById('storeSelect');
+  if (!storeSelect || !storeSelect.parentElement) return null;
+
+  section = document.createElement('div');
+  section.id = 'fulfillmentSection';
+  section.className = 'form-field full-width';
+  section.innerHTML = `
+    <label>How would you like to receive your screens?</label>
+    <div class="inline-options">
+      <label><input type="radio" name="fulfillmentMethod" value="pickup" checked /> Pick up at selected store</label>
+      <label><input type="radio" name="fulfillmentMethod" value="delivery" /> Delivery (+$10)</label>
+    </div>
+    <p id="fulfillmentNote" class="helper-text small">Delivery requires a $35 minimum screen order and must be within 15 miles of the selected store.</p>
+  `;
+  storeSelect.parentElement.insertAdjacentElement('afterend', section);
+
+  section.querySelectorAll('input[name="fulfillmentMethod"]').forEach((input) => {
+    input.addEventListener('change', () => {
+      AppState.fulfillmentMethod = getFulfillmentMethod();
+      updateFulfillmentUi();
+      renderSummary();
+    });
+  });
+
+  return section;
+}
+
+function updateFulfillmentUi() {
+  ensureFulfillmentSection();
+  const note = document.getElementById('fulfillmentNote');
+  if (!note) return;
+
+  const eligibility = getDeliveryEligibility();
+  const subtotalNeeded = Math.max(0, DELIVERY_MINIMUM_SUBTOTAL - eligibility.subtotal);
+  const milesText = eligibility.distanceKnown ? `${eligibility.miles} miles` : 'unknown distance';
+
+  if (eligibility.method === 'pickup') {
+    if (eligibility.distanceKnown && eligibility.withinRadius) {
+      note.textContent = `Pickup selected. Delivery is available for this address if the screen subtotal is at least $35. Estimated distance: ${milesText}.`;
+    } else if (eligibility.distanceKnown) {
+      note.textContent = `Pickup selected. Delivery is not available because this address is outside the 15-mile delivery radius from the selected store. Estimated distance: ${milesText}.`;
+    } else {
+      note.textContent = 'Pickup selected. Delivery requires a $35 minimum screen order and must be within 15 miles of the selected store.';
+    }
+    return;
+  }
+
+  if (!eligibility.distanceKnown) {
+    note.textContent = 'Delivery selected, but we cannot verify delivery distance from this ZIP code. Please choose pickup or confirm the ZIP code.';
+  } else if (!eligibility.withinRadius) {
+    note.textContent = `Delivery is not available because this address is outside the 15-mile delivery radius from the selected store. Estimated distance: ${milesText}.`;
+  } else if (!eligibility.minimumMet) {
+    note.textContent = `Delivery selected. Add ${formatMoney(subtotalNeeded)} more in screen subtotal to meet the $35 delivery minimum. Estimated distance: ${milesText}.`;
+  } else {
+    note.textContent = `Delivery selected. $10 delivery fee applied. Estimated distance: ${milesText}.`;
+  }
 }
 
 function ensureStoreAutoNote() {
@@ -163,16 +272,17 @@ function setSelectedStore(store, source = 'auto') {
   }
 
   const note = ensureStoreAutoNote();
-  if (!note) return;
-
-  if (source === 'manual') {
-    note.textContent = `Selected store: ${matchingStore.name}. This store will be used for the quote unless you change it.`;
-    return;
+  if (note) {
+    if (source === 'manual') {
+      note.textContent = `Selected store: ${matchingStore.name}. This store will be used for the quote unless you change it.`;
+    } else {
+      note.textContent = store.estimatedDistanceMiles
+        ? `Closest available store selected automatically: ${matchingStore.name} — approximately ${store.estimatedDistanceMiles} miles by area estimate. You can change this selection.`
+        : `Closest available store selected automatically: ${matchingStore.name}. You can change this selection.`;
+    }
   }
 
-  note.textContent = store.estimatedDistanceMiles
-    ? `Closest available store selected automatically: ${matchingStore.name} — approximately ${store.estimatedDistanceMiles} miles by area estimate. You can change this selection.`
-    : `Closest available store selected automatically: ${matchingStore.name}. You can change this selection.`;
+  updateFulfillmentUi();
 }
 
 function syncStoreFromDropdown(source = 'manual') {
@@ -204,6 +314,8 @@ function installStoreAutoSelectBehavior() {
   const select = document.getElementById('storeSelect');
   if (!form || !select) return;
 
+  ensureFulfillmentSection();
+
   const addressFieldIds = ['customerStreet', 'customerCity', 'customerState', 'customerZip'];
   addressFieldIds.forEach((id) => {
     const input = document.getElementById(id);
@@ -211,10 +323,12 @@ function installStoreAutoSelectBehavior() {
     input.addEventListener('input', () => {
       customerStoreManualOverride = false;
       scheduleStoreAutoSelect(false);
+      updateFulfillmentUi();
     });
     input.addEventListener('change', () => {
       customerStoreManualOverride = false;
       scheduleStoreAutoSelect(false);
+      updateFulfillmentUi();
     });
   });
 
@@ -226,10 +340,12 @@ function installStoreAutoSelectBehavior() {
 
   const observer = new MutationObserver(() => {
     if (!customerStoreManualOverride) scheduleStoreAutoSelect(false);
+    updateFulfillmentUi();
   });
   observer.observe(select, { childList: true });
 
   scheduleStoreAutoSelect(false);
+  updateFulfillmentUi();
 }
 
 function handleCustomerSubmit(event) {
@@ -243,6 +359,7 @@ function handleCustomerSubmit(event) {
   }
 
   AppState.customer = customer;
+  AppState.fulfillmentMethod = getFulfillmentMethod();
 
   const selectedStore = syncStoreFromDropdown(customerStoreManualOverride ? 'manual' : 'auto');
   if (selectedStore) {
@@ -255,12 +372,19 @@ function handleCustomerSubmit(event) {
   const stores = getStores();
   if (!AppState.store && stores.length) AppState.store = stores[0];
 
+  const eligibility = getDeliveryEligibility();
+  if (AppState.fulfillmentMethod === 'delivery' && eligibility.distanceKnown && !eligibility.withinRadius) {
+    alert(`Delivery is not available for this address from the selected store. Estimated distance is ${eligibility.miles} miles. Please choose pickup or select a closer store.`);
+    return;
+  }
+
   renderSummary();
   showView('dashboard');
 }
 
 async function submitQuoteToApi() {
   const totals = getQuoteTotals();
+  const eligibility = getDeliveryEligibility(totals.subtotal);
   const payload = {
     customer: {
       name: AppState.customer.name,
@@ -280,6 +404,13 @@ async function submitQuoteToApi() {
       city: AppState.store?.city || null,
       state: AppState.store?.state || null,
       zip: AppState.store?.zip || null
+    },
+    fulfillment: {
+      method: eligibility.method,
+      delivery_distance_miles: eligibility.miles,
+      delivery_fee_cents: Math.round(totals.delivery * 100),
+      delivery_minimum_cents: DELIVERY_MINIMUM_SUBTOTAL * 100,
+      delivery_radius_miles: DELIVERY_RADIUS_MILES
     },
     totals: {
       subtotal_cents: Math.round(totals.subtotal * 100),
@@ -364,6 +495,7 @@ function renderSummary() {
         if (cityState) lines.push(cityState);
         if (s.zip) lines.push(escapeHtml(s.zip));
         if (s.phone) lines.push(escapeHtml(formatPhone(s.phone)));
+        lines.push(`<strong>Fulfillment:</strong> ${getFulfillmentMethod() === 'delivery' ? 'Delivery' : 'Pickup'}`);
         storeEl.innerHTML = lines.map((x) => `<div>${x}</div>`).join('');
       }
     }
@@ -378,6 +510,7 @@ function renderSummary() {
     setText($('#taxValue'), formatMoney(totals.tax));
     setText($('#deliveryValue'), formatMoney(totals.delivery));
     setText($('#totalValue'), formatMoney(totals.total));
+    updateFulfillmentUi();
     renderSuccessTotals();
   } catch (err) {
     console.error('Render summary failed:', err);
@@ -429,6 +562,52 @@ function renderSuccessView() {
   showView('success');
 }
 
+async function handleSubmitQuote() {
+  try {
+    if (!AppState.customer || !AppState.store) {
+      alert('Please complete customer and store information first.');
+      return;
+    }
+    if (!AppState.lineItems.length) {
+      alert('Please add at least one screen to the quote.');
+      return;
+    }
+    const ack = $('#ackMeasurements');
+    if (!ack || !ack.checked) {
+      alert('Please acknowledge that measurements and hardware selections are your responsibility before submitting.');
+      return;
+    }
+
+    AppState.fulfillmentMethod = getFulfillmentMethod();
+    const eligibility = getDeliveryEligibility();
+    if (AppState.fulfillmentMethod === 'delivery') {
+      if (!eligibility.distanceKnown) {
+        alert('Delivery distance could not be verified from this ZIP code. Please choose pickup or correct the address.');
+        return;
+      }
+      if (!eligibility.withinRadius) {
+        alert(`Delivery is not available because the address is outside the 15-mile radius from the selected store. Estimated distance is ${eligibility.miles} miles.`);
+        return;
+      }
+      if (!eligibility.minimumMet) {
+        alert(`Delivery requires at least $35 in screen subtotal. Add ${formatMoney(DELIVERY_MINIMUM_SUBTOTAL - eligibility.subtotal)} more or choose pickup.`);
+        return;
+      }
+    }
+
+    const result = await submitQuoteToApi();
+    AppState.quoteId = result?.quote_id || result?.id || generateQuoteId();
+    AppState.stripeEnabled = Boolean(result?.payment_url);
+    renderSuccessView();
+  } catch (err) {
+    console.error('Submit quote failed:', err);
+    showError(err?.message || 'Quote submission failed. Please try again.');
+    alert(err?.message || 'Quote submission failed. Please try again.');
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   installStoreAutoSelectBehavior();
+  ensureFulfillmentSection();
+  updateFulfillmentUi();
 });
