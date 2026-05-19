@@ -432,6 +432,7 @@ async function submitQuoteToApi() {
       line_total_cents: Math.round((item.lineTotal || 0) * 100),
       frame_cut_type: item.frameCutType || null,
       crossbar_needed: item.crossbarNeeded ?? null,
+      crossbar_type: item.crossbarType || null,
       crossbar_orientation: item.crossbarOrientation || null,
       crossbar_distance_display: item.crossbarDistance || null,
       handle_orientation: item.handleOrientation || null,
