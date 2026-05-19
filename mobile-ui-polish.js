@@ -90,6 +90,9 @@
       .dimension-input select {
         text-align: center;
       }
+      #hardwareSide {
+        margin-bottom: 0.65rem;
+      }
       .qty-stepper {
         display: grid;
         grid-template-columns: 46px minmax(64px, 92px) 46px;
