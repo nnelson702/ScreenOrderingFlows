@@ -374,21 +374,35 @@ async function sendEmail(env, message) {
 }
 
 function customerQuoteHtml(quote, items, paymentUrl) {
+  const quoteDownloadUrl =
+    'https://screen-ordering-flow.nnelson.workers.dev/quote.html?token=' +
+    encodeURIComponent(quote.view_token || '');
+
   return emailShell('Your screen quote is ready', `
     <p>Your Screen Quote has been created, but not yet placed.</p>
-    <p>Please review the details below for accuracy. When ready, you can pay securely online or visit the store to make payment and complete your order.</p>
-    <p><a href="${esc(paymentUrl)}" style="display:inline-block;background:#b01c2e;color:#fff;text-decoration:none;padding:12px 18px;border-radius:6px;font-weight:bold;">Pay Here</a></p>
+    <p>Please review the details below for accuracy. When ready, you can pay securely online, download a copy of your quote, or visit the store to make payment and complete your order.</p>
+    <p>
+      <a href="${esc(paymentUrl)}" style="display:inline-block;background:#b01c2e;color:#fff;text-decoration:none;padding:12px 18px;border-radius:6px;font-weight:bold;margin:0 8px 8px 0;">Pay Here</a>
+      <a href="${esc(quoteDownloadUrl)}" style="display:inline-block;background:#333;color:#fff;text-decoration:none;padding:12px 18px;border-radius:6px;font-weight:bold;margin:0 8px 8px 0;">Download Your Quote</a>
+    </p>
     ${quoteSummaryHtml(quote, items)}
     <p>Once payment is received, production on your order will begin and will no longer be able to be cancelled or modified.</p>
   `);
 }
 
 function customerQuoteText(quote, items, paymentUrl) {
+  const quoteDownloadUrl =
+    'https://screen-ordering-flow.nnelson.workers.dev/quote.html?token=' +
+    encodeURIComponent(quote.view_token || '');
+
   return [
     'Your Screen Quote has been created, but not yet placed.',
     '',
     'Review the details of your order for accuracy, then pay here:',
     paymentUrl,
+    '',
+    'Download your quote here:',
+    quoteDownloadUrl,
     '',
     quoteSummaryText(quote, items),
     '',
