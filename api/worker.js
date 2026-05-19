@@ -147,6 +147,7 @@ async function createQuote(request, env) {
     line_total_cents: cents(item.line_total_cents),
     frame_cut_type: item.frame_cut_type == null ? null : String(item.frame_cut_type),
     crossbar_needed: item.crossbar_needed == null ? null : Boolean(item.crossbar_needed),
+    crossbar_type: item.crossbar_type == null ? null : String(item.crossbar_type),
     crossbar_orientation: item.crossbar_orientation == null ? null : String(item.crossbar_orientation),
     crossbar_distance_display: item.crossbar_distance_display == null ? null : String(item.crossbar_distance_display),
     handle_orientation: item.handle_orientation == null ? null : String(item.handle_orientation),
