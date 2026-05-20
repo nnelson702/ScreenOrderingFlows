@@ -319,11 +319,15 @@ async function handleStripeWebhook(request, env) {
     const quoteId = session && session.metadata && session.metadata.quote_id;
 
     if (quoteId) {
+      const now = new Date().toISOString();
+
       await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quoteId), {
-        status: 'paid',
+        status: 'in_production',
+        payment_method: 'stripe',
         stripe_session_id: session.id || null,
         stripe_payment_intent_id: session.payment_intent || null,
-        paid_at: new Date().toISOString()
+        paid_at: now,
+        status_updated_at: now
       });
 
       const q = await sbSelect(env, 'quotes', 'id=eq.' + encodeURIComponent(quoteId));
