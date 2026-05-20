@@ -207,7 +207,100 @@ async function viewQuote(env, viewToken) {
 
   return json({ ok: true, quote, items: items.data || [] });
 }
+async function updateQuoteStatus(request, env) {
+  const missing = missingEnv(env, ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'STAFF_API_KEY']);
+  if (missing.length) {
+    return json({ error: 'Missing required staff status environment variables', missing, env: envStatus(env) }, 500);
+  }
 
+  const auth = request.headers.get('Authorization') || '';
+  if (auth !== 'Bearer ' + env.STAFF_API_KEY) {
+    return json({ ok: false, error: 'Unauthorized' }, 401);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (err) {
+    return json({ ok: false, error: 'Invalid JSON body' }, 400);
+  }
+
+  const quoteId = clean(body.quote_id);
+  const status = clean(body.status).toLowerCase();
+  const paymentMethod = clean(body.payment_method);
+  const posReceiptNumber = clean(body.pos_receipt_number);
+  const posNotes = clean(body.pos_notes);
+
+  if (!quoteId) return json({ ok: false, error: 'Missing quote_id' }, 400);
+  if (!status) return json({ ok: false, error: 'Missing status' }, 400);
+
+  const validStatuses = ['in_production', 'ready', 'completed', 'cancelled', 'expired'];
+  if (!validStatuses.includes(status)) {
+    return json({
+      ok: false,
+      error: 'Invalid status',
+      allowed_statuses: validStatuses
+    }, 400);
+  }
+
+  const now = new Date().toISOString();
+  const patch = {
+    status,
+    status_updated_at: now
+  };
+
+  if (status === 'in_production') {
+    patch.payment_method = paymentMethod || 'in_store';
+    patch.paid_at = now;
+    if (posReceiptNumber) patch.pos_receipt_number = posReceiptNumber;
+    if (posNotes) patch.pos_notes = posNotes;
+  }
+
+  if (status === 'ready') {
+    patch.ready_at = now;
+    if (posNotes) patch.pos_notes = posNotes;
+  }
+
+  if (status === 'completed') {
+    patch.completed_at = now;
+    if (posNotes) patch.pos_notes = posNotes;
+  }
+
+  if (status === 'cancelled') {
+    patch.cancelled_at = now;
+    if (posNotes) patch.pos_notes = posNotes;
+  }
+
+  if (status === 'expired') {
+    patch.expired_at = now;
+    if (posNotes) patch.pos_notes = posNotes;
+  }
+
+  const updated = await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quoteId), patch);
+  if (!updated.ok) {
+    return json({ ok: false, error: 'Supabase status update failed', details: updated.error }, 500);
+  }
+
+  let emailStatus = null;
+
+  if (status === 'in_production') {
+    const q = await sbSelect(env, 'quotes', 'id=eq.' + encodeURIComponent(quoteId));
+    const quote = q.ok && q.data ? q.data[0] : null;
+
+    if (quote) {
+      const itemsResult = await sbSelect(env, 'quote_items', 'quote_id=eq.' + encodeURIComponent(quote.id) + '&order=sort_index.asc');
+      const items = itemsResult.ok ? (itemsResult.data || []) : [];
+      emailStatus = await sendPaymentReceivedEmails(env, quote, items);
+    }
+  }
+
+  return json({
+    ok: true,
+    quote_id: quoteId,
+    status,
+    email_status: emailStatus
+  });
+}
 async function handleStripeWebhook(request, env) {
   const missing = missingEnv(env, ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'STRIPE_WEBHOOK_SECRET']);
   if (missing.length) return json({ error: 'Missing required webhook environment variables', missing }, 500);
