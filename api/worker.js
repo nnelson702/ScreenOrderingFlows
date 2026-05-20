@@ -661,7 +661,8 @@ function envStatus(env) {
     STRIPE_WEBHOOK_SECRET: Boolean(env.STRIPE_WEBHOOK_SECRET),
     RESEND_API_KEY: Boolean(env.RESEND_API_KEY),
     RESEND_FROM: Boolean(env.RESEND_FROM),
-    RESEND_REPLY_TO: Boolean(env.RESEND_REPLY_TO)
+    RESEND_REPLY_TO: Boolean(env.RESEND_REPLY_TO),
+    STAFF_API_KEY: Boolean(env.STAFF_API_KEY)
   };
 }
 
