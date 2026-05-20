@@ -65,7 +65,43 @@ async function createQuote(request, env) {
     return json({ error: 'Missing required Worker environment variables', missing, env: envStatus(env) }, 500);
   }
 
-    const fulfillment = body.fulfillment || {};
+  let body;
+  try {
+    body = await request.json();
+  } catch (err) {
+    return json({
+      error: 'Invalid JSON body',
+      message: String(err && err.message ? err.message : err)
+    }, 400);
+  }
+
+  const customer = body.customer || {};
+  const store = body.store || {};
+  const fulfillment = body.fulfillment || {};
+  const totals = body.totals || {};
+  const items = Array.isArray(body.items) ? body.items : [];
+
+  if (!customer.name || !customer.email) {
+    return json({ error: 'Missing customer name or email' }, 400);
+  }
+
+  if (!store.name || !store.email) {
+    return json({ error: 'Missing store name or email' }, 400);
+  }
+
+  if (!items.length) {
+    return json({ error: 'Quote must include at least one screen item' }, 400);
+  }
+
+  const subtotal = cents(totals.subtotal_cents);
+  const delivery = cents(totals.delivery_cents);
+  const tax = cents(totals.tax_cents);
+  const total = cents(totals.total_cents);
+
+  if (total <= 0) {
+    return json({ error: 'Computed total invalid' }, 400);
+  }
+
   const fulfillmentMethod = clean(
     body.fulfillment_method ||
     fulfillment.fulfillment_method ||
@@ -82,6 +118,7 @@ async function createQuote(request, env) {
     status: 'quote_created',
     view_token: token(40),
     validity_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+
     customer_name: clean(customer.name),
     customer_street: clean(customer.street),
     customer_city: clean(customer.city),
@@ -89,6 +126,7 @@ async function createQuote(request, env) {
     customer_zip: clean(customer.zip),
     customer_phone: clean(customer.phone),
     customer_email: clean(customer.email),
+
     store_id: store.id == null ? null : String(store.id),
     store_name: clean(store.name),
     store_email: clean(store.email),
@@ -97,10 +135,12 @@ async function createQuote(request, env) {
     store_city: store.city == null ? null : String(store.city),
     store_state: store.state == null ? null : String(store.state),
     store_zip: store.zip == null ? null : String(store.zip),
+
     subtotal_cents: subtotal,
     delivery_cents: delivery,
     tax_cents: tax,
     total_cents: total,
+
     fulfillment_method: fulfillmentMethod,
     delivery_distance_miles:
       rawDeliveryDistanceMiles == null || rawDeliveryDistanceMiles === ''
@@ -114,31 +154,42 @@ async function createQuote(request, env) {
   };
 
   const insertedQuote = await sbInsert(env, 'quotes', quotePayload);
-  if (!insertedQuote.ok) return json({ error: 'Supabase quote insert failed', details: insertedQuote.error }, 500);
+  if (!insertedQuote.ok) {
+    return json({ error: 'Supabase quote insert failed', details: insertedQuote.error }, 500);
+  }
 
   const quote = insertedQuote.data && insertedQuote.data[0];
-  if (!quote || !quote.id) return json({ error: 'Supabase did not return quote id', details: insertedQuote.data }, 500);
+  if (!quote || !quote.id) {
+    return json({ error: 'Supabase did not return quote id', details: insertedQuote.data }, 500);
+  }
 
   const itemRows = items.map((item, index) => ({
     quote_id: quote.id,
     sort_index: Number(item.sort_index || index + 1),
     type: clean(item.type || 'window').toLowerCase(),
     qty: Number(item.qty || 1),
+
     width_display: clean(item.width_display),
     height_display: clean(item.height_display),
+
     frame_type: clean(item.frame_type),
     frame_color: clean(item.frame_color),
     material_type: clean(item.material_type),
     material_color: clean(item.material_color),
+
     line_total_cents: cents(item.line_total_cents),
+
     frame_cut_type: item.frame_cut_type == null ? null : String(item.frame_cut_type),
+
     crossbar_needed: item.crossbar_needed == null ? null : Boolean(item.crossbar_needed),
     crossbar_type: item.crossbar_type == null ? null : String(item.crossbar_type),
     crossbar_orientation: item.crossbar_orientation == null ? null : String(item.crossbar_orientation),
     crossbar_distance_display: item.crossbar_distance_display == null ? null : String(item.crossbar_distance_display),
+
     handle_orientation: item.handle_orientation == null ? null : String(item.handle_orientation),
     handle_height_display: item.handle_height_display == null ? null : String(item.handle_height_display),
     roller_type: item.roller_type == null ? null : String(item.roller_type),
+
     hardware_json: item.hardware_json == null ? null : item.hardware_json
   }));
 
@@ -150,18 +201,16 @@ async function createQuote(request, env) {
 
   const checkout = await createCheckout(request, env, quote);
   if (!checkout.ok) {
-    await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quote.id), { status: 'payment_link_failed' });
-    return json({ error: 'Stripe checkout session create failed: ' + summarizeStripeError(checkout.error), quote_id: quote.id, details: checkout.error }, 500);
-  }
+    await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quote.id), {
+      status: 'payment_link_failed'
+    });
 
-  const updatedQuote = {
-    ...quote,
-    stripe_session_id: checkout.data.id,
-    payment_url: checkout.data.url,
-    fulfillment_method: quotePayload.fulfillment_method,
-    delivery_distance_miles: quotePayload.delivery_distance_miles,
-    delivery_fee_cents: quotePayload.delivery_fee_cents
-  };
+    return json({
+      error: 'Stripe checkout session create failed: ' + summarizeStripeError(checkout.error),
+      quote_id: quote.id,
+      details: checkout.error
+    }, 500);
+  }
 
   const updated = await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quote.id), {
     stripe_session_id: checkout.data.id,
@@ -170,9 +219,25 @@ async function createQuote(request, env) {
     delivery_distance_miles: quotePayload.delivery_distance_miles,
     delivery_fee_cents: quotePayload.delivery_fee_cents
   });
+
   if (!updated.ok) {
-    return json({ error: 'Supabase payment fields update failed', quote_id: quote.id, payment_url: checkout.data.url, details: updated.error }, 500);
+    return json({
+      error: 'Supabase payment fields update failed',
+      quote_id: quote.id,
+      payment_url: checkout.data.url,
+      details: updated.error
+    }, 500);
   }
+
+  const updatedQuote = {
+    ...quote,
+    status: quotePayload.status,
+    stripe_session_id: checkout.data.id,
+    payment_url: checkout.data.url,
+    fulfillment_method: quotePayload.fulfillment_method,
+    delivery_distance_miles: quotePayload.delivery_distance_miles,
+    delivery_fee_cents: quotePayload.delivery_fee_cents
+  };
 
   const emailStatus = await sendQuoteCreatedEmails(env, updatedQuote, itemRows);
 
@@ -184,7 +249,7 @@ async function createQuote(request, env) {
     email_status: emailStatus,
     quote: {
       id: quote.id,
-      status: quote.status,
+      status: quotePayload.status,
       view_token: quote.view_token,
       total_cents: quote.total_cents,
       payment_url: checkout.data.url,
