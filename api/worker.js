@@ -61,26 +61,7 @@ async function createQuote(request, env) {
     return json({ error: 'Missing required Worker environment variables', missing, env: envStatus(env) }, 500);
   }
 
-  const body = await request.json();
-  const customer = body.customer || {};
-  const store = body.store || {};
-  const items = Array.isArray(body.items) ? body.items : [];
-  const totals = body.totals || {};
-
-  for (const key of ['name', 'street', 'city', 'state', 'zip', 'phone', 'email']) {
-    if (!String(customer[key] || '').trim()) return json({ error: 'Missing customer.' + key }, 400);
-  }
-  if (!String(store.name || '').trim()) return json({ error: 'Missing store.name' }, 400);
-  if (!String(store.email || '').trim()) return json({ error: 'Missing store.email' }, 400);
-  if (!items.length) return json({ error: 'At least one item required' }, 400);
-
-  const subtotal = cents(totals.subtotal_cents) || items.reduce((sum, item) => sum + cents(item.line_total_cents), 0);
-  const delivery = cents(totals.delivery_cents);
-  const tax = cents(totals.tax_cents);
-  const total = cents(totals.total_cents) || subtotal + delivery + tax;
-  if (total <= 0) return json({ error: 'Computed total invalid' }, 400);
-
-  const fulfillment = body.fulfillment || {};
+    const fulfillment = body.fulfillment || {};
   const fulfillmentMethod = clean(
     body.fulfillment_method ||
     fulfillment.fulfillment_method ||
@@ -88,19 +69,6 @@ async function createQuote(request, env) {
     'pickup'
   ).toLowerCase();
 
-  const rawDeliveryDistanceMiles =
-    body.delivery_distance_miles ??
-    fulfillment.delivery_distance_miles ??
-    null;
-
-    // Extract fulfillment info from body or default to pickup
-  const fulfillment = body.fulfillment || {};
-  const fulfillmentMethod = clean(
-    body.fulfillment_method ||
-    fulfillment.fulfillment_method ||
-    fulfillment.method ||
-    'pickup'
-  ).toLowerCase();
   const rawDeliveryDistanceMiles =
     body.delivery_distance_miles ??
     fulfillment.delivery_distance_miles ??
@@ -109,6 +77,7 @@ async function createQuote(request, env) {
   const quotePayload = {
     status: 'quote_created',
     view_token: token(40),
+    validity_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     customer_name: clean(customer.name),
     customer_street: clean(customer.street),
     customer_city: clean(customer.city),
