@@ -93,8 +93,21 @@ async function createQuote(request, env) {
     fulfillment.delivery_distance_miles ??
     null;
 
+    // Extract fulfillment info from body or default to pickup
+  const fulfillment = body.fulfillment || {};
+  const fulfillmentMethod = clean(
+    body.fulfillment_method ||
+    fulfillment.fulfillment_method ||
+    fulfillment.method ||
+    'pickup'
+  ).toLowerCase();
+  const rawDeliveryDistanceMiles =
+    body.delivery_distance_miles ??
+    fulfillment.delivery_distance_miles ??
+    null;
+
   const quotePayload = {
-    status: 'submitted',
+    status: 'quote_created',
     view_token: token(40),
     customer_name: clean(customer.name),
     customer_street: clean(customer.street),
