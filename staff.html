@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Screen Tool Staff Portal</title>
+  <style>
+    :root{--red:#b01c2e;--dark:#111827;--muted:#6b7280;--line:#d8dde6;--soft:#f4f6f8;--bad:#a31621;}
+    *{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--dark);background:#f3f4f6}
+    header{background:var(--red);color:#fff;padding:18px 24px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.16)}
+    header img{width:54px;height:54px;object-fit:contain;background:#fff;border-radius:8px;padding:4px} header h1{margin:0;font-size:26px;line-height:1.05} header p{margin:4px 0 0;font-size:15px;opacity:.92}
+    main{max-width:1180px;margin:0 auto;padding:28px 18px 48px}.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,420px);gap:18px;align-items:start}.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 4px 14px rgba(17,24,39,.06)}
+    h2{margin:0 0 14px;font-size:22px} h3{margin:22px 0 10px;font-size:17px}.helper{margin:0 0 16px;color:var(--muted);line-height:1.45} label{display:block;font-weight:700;margin:14px 0 6px}
+    input,select,textarea{width:100%;border:1px solid #c9d0dc;border-radius:10px;padding:11px 12px;font:inherit;background:#fff} textarea{min-height:90px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.token-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px} button{border:0;border-radius:999px;padding:12px 18px;background:var(--red);color:#fff;font-weight:700;cursor:pointer;min-height:44px} button.secondary{background:#e5e7eb;color:#111827} button.danger{background:var(--bad)} button:disabled{opacity:.55;cursor:not-allowed}
+    .notice{border-radius:12px;padding:12px 14px;margin-top:14px;line-height:1.45;display:none}.notice.show{display:block}.notice.ok{background:#e7f7ed;color:#0b6b35;border:1px solid #b7e2c4}.notice.warn{background:#fff4dc;color:#805000;border:1px solid #f3d28d}.notice.bad{background:#fde8e8;color:#9b1c1c;border:1px solid #f3b4b4}
+    .summary{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--soft);margin-top:18px;display:none}.summary.show{display:block}.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.summary-grid div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;min-height:82px}.summary-grid strong{display:block;margin-bottom:6px;font-size:13px;text-transform:uppercase;color:var(--muted);letter-spacing:.03em}.mini-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px}.mini-table th,.mini-table td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}.mini-table th:last-child,.mini-table td:last-child{text-align:right}.fine{color:var(--muted);font-size:13px;line-height:1.4;margin-top:14px}
+    @media(max-width:820px){.grid,.row,.summary-grid,.token-row{grid-template-columns:1fr}header{padding:14px 16px}header img{width:46px;height:46px}header h1{font-size:22px}main{padding:18px 12px 36px}.card{padding:16px}}
+  </style>
+</head>
+<body>
+  <header><img src="skye_ace_logo.png" alt="Skye ACE Hardware"><div><h1>Screen Tool Staff Portal</h1><p>Internal status updates for custom screen quotes and orders</p></div></header>
+  <main>
+    <div class="grid">
+      <section class="card">
+        <h2>Update Order Status</h2>
+        <p class="helper">Use this page to mark in-store payment, move orders to Ready, complete orders, or cancel/expire records.</p>
+        <label for="quoteId">Quote ID</label>
+        <input id="quoteId" autocomplete="off" placeholder="Example: 88b16f78-1bcb-44f7-8088-5026276aeb1c">
+        <div class="row"><div><label for="statusSelect">New Status</label><select id="statusSelect"><option value="in_production">In-Production / Paid In Store</option><option value="ready">Ready</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="expired">Expired</option></select></div><div><label for="paymentMethod">Payment Source</label><select id="paymentMethod"><option value="in_store">In Store / POS Entered</option><option value="stripe">Stripe</option></select></div></div>
+        <label for="posReceiptNumber">POS Receipt / Transaction #</label><input id="posReceiptNumber" autocomplete="off" placeholder="Required when marking paid in store">
+        <label for="posNotes">Staff Notes</label><textarea id="posNotes" placeholder="Optional notes, customer timing details, cancellation reason, etc."></textarea>
+        <div class="actions"><button id="updateStatusBtn" type="button">Update Status</button><button id="clearFormBtn" class="secondary" type="button">Clear Form</button></div>
+        <div id="resultNotice" class="notice" role="status"></div>
+      </section>
+      <aside class="card"><h2>Staff Access</h2><p class="helper">Enter the staff access token for this browser session. Do not include the token in screenshots or customer-facing material.</p><div class="token-row"><div><label for="staffToken">Staff Access Token</label><input id="staffToken" type="password" autocomplete="off" placeholder="Paste token"></div><button id="saveTokenBtn" class="secondary" type="button">Save</button></div><div class="actions"><button id="clearTokenBtn" class="danger" type="button">Clear Saved Token</button></div><div id="tokenNotice" class="notice"></div><h3>Optional: Load Customer Quote</h3><p class="helper">Paste the view token from a customer quote link to preview the quote and auto-fill the Quote ID.</p><label for="viewToken">Quote View Token</label><input id="viewToken" autocomplete="off" placeholder="Token from quote.html?token=..."><div class="actions"><button id="loadQuoteBtn" class="secondary" type="button">Load Quote</button></div></aside>
+    </div>
+    <section id="quotePreview" class="summary" aria-live="polite"></section>
+    <p class="fine">Status rules: Quote Created is automatic. In-Production is set by Stripe payment or by staff after in-store POS payment. Ready and Completed are staff-controlled. Cancelled and Expired should be rare.</p>
+  </main>
+  <script src="staff.js"></script>
+</body>
+</html>
