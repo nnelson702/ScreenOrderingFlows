@@ -269,27 +269,90 @@ async function createQuote(request, env) {
 async function viewQuote(env, viewToken) {
   if (!viewToken) return json({ error: 'Missing view token' }, 400);
 
-  const q = await sbSelect(env, 'quotes', 'view_token=eq.' + encodeURIComponent(viewToken));
-  if (!q.ok) return json({ error: 'Supabase quote select failed', details: q.error }, 500);
+  const loaded = await loadQuoteWithItemsByFilter(env, 'view_token=eq.' + encodeURIComponent(viewToken));
+  if (!loaded.ok) {
+    return json({ error: loaded.error, details: loaded.details }, loaded.status || 500);
+  }
 
-  const quote = q.data && q.data[0];
-  if (!quote) return json({ error: 'Quote not found' }, 404);
-
-  const items = await sbSelect(env, 'quote_items', 'quote_id=eq.' + encodeURIComponent(quote.id) + '&order=sort_index.asc');
-  if (!items.ok) return json({ error: 'Supabase quote_items select failed', details: items.error }, 500);
-
-  return json({ ok: true, quote, items: items.data || [] });
+  return json({ ok: true, quote: loaded.quote, items: loaded.items });
 }
-async function updateQuoteStatus(request, env) {
-  const missing = missingEnv(env, ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'STAFF_API_KEY']);
-  if (missing.length) {
-    return json({ error: 'Missing required staff status environment variables', missing, env: envStatus(env) }, 500);
+
+async function searchQuotes(request, env) {
+  const staff = requireStaff(request, env);
+  if (!staff.ok) return staff.response;
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (err) {
+    return json({ ok: false, error: 'Invalid JSON body' }, 400);
   }
 
-  const auth = request.headers.get('Authorization') || '';
-  if (auth !== 'Bearer ' + env.STAFF_API_KEY) {
-    return json({ ok: false, error: 'Unauthorized' }, 401);
+  const term = clean(body.search || body.term || '').toLowerCase();
+  const status = clean(body.status || 'all').toLowerCase();
+  const storeId = clean(body.store_id || body.store || 'all');
+  const fulfillment = clean(body.fulfillment_method || 'all').toLowerCase();
+  const limit = Math.min(Math.max(Number(body.limit || 150), 1), 500);
+
+  const query = [
+    'order=created_at.desc',
+    'limit=' + limit
+  ];
+
+  if (status && status !== 'all') {
+    query.push('status=eq.' + encodeURIComponent(status));
   }
+
+  if (storeId && storeId !== 'all') {
+    query.push('store_id=eq.' + encodeURIComponent(storeId));
+  }
+
+  if (fulfillment && fulfillment !== 'all') {
+    query.push('fulfillment_method=eq.' + encodeURIComponent(fulfillment));
+  }
+
+  const result = await sbSelect(env, 'quotes', query.join('&'));
+  if (!result.ok) {
+    return json({ ok: false, error: 'Supabase quote search failed', details: result.error }, 500);
+  }
+
+  let rows = result.data || [];
+  if (term) {
+    rows = rows.filter((quote) => quoteMatchesTerm(quote, term));
+  }
+
+  return json({
+    ok: true,
+    count: rows.length,
+    quotes: rows.map(adminQuoteSummary)
+  });
+}
+
+async function adminViewQuote(request, env) {
+  const staff = requireStaff(request, env);
+  if (!staff.ok) return staff.response;
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (err) {
+    return json({ ok: false, error: 'Invalid JSON body' }, 400);
+  }
+
+  const quoteId = clean(body.quote_id);
+  if (!quoteId) return json({ ok: false, error: 'Missing quote_id' }, 400);
+
+  const loaded = await loadQuoteWithItemsByFilter(env, 'id=eq.' + encodeURIComponent(quoteId));
+  if (!loaded.ok) {
+    return json({ ok: false, error: loaded.error, details: loaded.details }, loaded.status || 500);
+  }
+
+  return json({ ok: true, quote: loaded.quote, items: loaded.items });
+}
+
+async function updateQuoteStatus(request, env) {
+  const staff = requireStaff(request, env);
+  if (!staff.ok) return staff.response;
 
   let body;
   try {
@@ -355,15 +418,19 @@ async function updateQuoteStatus(request, env) {
   }
 
   let emailStatus = null;
+  const loaded = await loadQuoteWithItemsByFilter(env, 'id=eq.' + encodeURIComponent(quoteId));
 
-  if (status === 'in_production') {
-    const q = await sbSelect(env, 'quotes', 'id=eq.' + encodeURIComponent(quoteId));
-    const quote = q.ok && q.data ? q.data[0] : null;
+  if (loaded.ok) {
+    if (status === 'in_production') {
+      emailStatus = await sendPaymentReceivedEmails(env, loaded.quote, loaded.items);
+    }
 
-    if (quote) {
-      const itemsResult = await sbSelect(env, 'quote_items', 'quote_id=eq.' + encodeURIComponent(quote.id) + '&order=sort_index.asc');
-      const items = itemsResult.ok ? (itemsResult.data || []) : [];
-      emailStatus = await sendPaymentReceivedEmails(env, quote, items);
+    if (status === 'ready') {
+      emailStatus = await sendReadyEmails(env, loaded.quote, loaded.items);
+    }
+
+    if (status === 'completed') {
+      emailStatus = await sendCompletedEmails(env, loaded.quote, loaded.items);
     }
   }
 
@@ -373,6 +440,114 @@ async function updateQuoteStatus(request, env) {
     status,
     email_status: emailStatus
   });
+}
+
+async function loadQuoteWithItemsByFilter(env, filter) {
+  const q = await sbSelect(env, 'quotes', filter);
+  if (!q.ok) {
+    return {
+      ok: false,
+      error: 'Supabase quote select failed',
+      details: q.error,
+      status: 500
+    };
+  }
+
+  const quote = q.data && q.data[0];
+  if (!quote) {
+    return {
+      ok: false,
+      error: 'Quote not found',
+      status: 404
+    };
+  }
+
+  const items = await sbSelect(env, 'quote_items', 'quote_id=eq.' + encodeURIComponent(quote.id) + '&order=sort_index.asc');
+  if (!items.ok) {
+    return {
+      ok: false,
+      error: 'Supabase quote_items select failed',
+      details: items.error,
+      status: 500
+    };
+  }
+
+  return {
+    ok: true,
+    quote,
+    items: items.data || []
+  };
+}
+
+function requireStaff(request, env) {
+  const missing = missingEnv(env, ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'STAFF_API_KEY']);
+  if (missing.length) {
+    return {
+      ok: false,
+      response: json({
+        ok: false,
+        error: 'Missing required staff environment variables',
+        missing,
+        env: envStatus(env)
+      }, 500)
+    };
+  }
+
+  const auth = request.headers.get('Authorization') || '';
+  if (auth !== 'Bearer ' + env.STAFF_API_KEY) {
+    return {
+      ok: false,
+      response: json({ ok: false, error: 'Unauthorized' }, 401)
+    };
+  }
+
+  return { ok: true };
+}
+
+function adminQuoteSummary(quote) {
+  return {
+    id: quote.id,
+    order_number: quote.order_number || null,
+    created_at: quote.created_at,
+    status: quote.status,
+    customer_name: quote.customer_name,
+    customer_phone: quote.customer_phone,
+    customer_email: quote.customer_email,
+    store_id: quote.store_id,
+    store_name: quote.store_name,
+    fulfillment_method: quote.fulfillment_method,
+    total_cents: quote.total_cents,
+    payment_method: quote.payment_method,
+    pos_receipt_number: quote.pos_receipt_number,
+    paid_at: quote.paid_at,
+    ready_at: quote.ready_at,
+    completed_at: quote.completed_at,
+    status_updated_at: quote.status_updated_at,
+    validity_expires_at: quote.validity_expires_at,
+    payment_url: quote.payment_url,
+    view_token: quote.view_token
+  };
+}
+
+function quoteMatchesTerm(quote, term) {
+  const phoneTerm = digits(term);
+  const haystack = [
+    quote.id,
+    quote.order_number,
+    quote.customer_name,
+    quote.customer_phone,
+    quote.customer_email,
+    quote.store_name,
+    quote.status
+  ].map((value) => clean(value).toLowerCase()).join(' ');
+
+  if (haystack.includes(term)) return true;
+  if (phoneTerm && digits(quote.customer_phone).includes(phoneTerm)) return true;
+  return false;
+}
+
+function digits(value) {
+  return clean(value).replace(/\D/g, '');
 }
 async function handleStripeWebhook(request, env) {
   const missing = missingEnv(env, ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'STRIPE_WEBHOOK_SECRET']);
