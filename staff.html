@@ -261,11 +261,12 @@ async function loadQuote(){const token=f.view.value.trim();if(!token)return show
 function clearForm(){selectedQuote=null;selectedId='';f.active.value='';f.quote.value='';f.status.value='in_production';f.method.value='in_store';f.receipt.value='';f.notes.value='';f.view.value='';f.preview.innerHTML='';f.selectedNotice.className='notice show warn';f.selectedNotice.textContent='No quote selected. Search and click a result row.';sync();setWorkflow(null);renderResultsPage();show(f.result,'warn','Detail cleared.')}
 function clearSearch(){f.search.value='';f.statusFilter.value='all';f.storeFilter.value='all';allRows=[];currentPage=1;renderKpis([]);f.results.innerHTML='<tr><td colspan="6" class="empty">Search cleared.</td></tr>';f.pageInfo.textContent='No results loaded.';show(f.searchNotice,'warn','Search cleared.')}
 function show(t,type,msg){t.className='notice show '+type;t.textContent=msg}
-function label(v){return String(v||'').replace(/_/g,' ').replace(/\w/g,c=>c.toUpperCase())}
+function label(v){return String(v||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}
 function money(v){return(Number(v||0)/100).toLocaleString('en-US',{style:'currency',currency:'USD'})}
 function shortDate(v){if(!v)return'';const d=new Date(v);if(Number.isNaN(d.getTime()))return safe(v);return d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}
 function safe(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
 (function init(){sync();setWorkflow(null);renderKpis([]);if(getAccess()){showApp();searchDashboard(true)}else{showLogin();setTimeout(()=>f.staffToken.focus(),50)}})();
 </script>
+<script src="staff-dashboard-v4-1-filters.js"></script>
 </body>
 </html>
