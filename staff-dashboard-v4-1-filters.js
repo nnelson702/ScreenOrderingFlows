@@ -1,20 +1,19 @@
-// Staff Dashboard V4.1 active/store defaults and sortable results.
+// Staff Dashboard V4.1 active/store defaults, sortable results, and top-admin access controls.
 (function(){
   const inactiveStatuses=['cancelled','expired'];
+  const storeMap={
+    '18228':'Tropicana',
+    '18507':'Horizon Ridge',
+    '18690':'Rainbow',
+    '19117':'Green Valley'
+  };
   let sortKey='created_at';
   let sortDir='desc';
 
-  function isActiveStatus(status){
-    return !inactiveStatuses.includes(String(status||'').toLowerCase());
-  }
-
-  function isCreatedLikeStatus(status){
-    return ['quote_created','submitted'].includes(String(status||'').toLowerCase());
-  }
-
-  function sessionInfo(){
-    try{return (getSession&&getSession().session)||{};}catch(e){return{};}
-  }
+  function isActiveStatus(status){return !inactiveStatuses.includes(String(status||'').toLowerCase());}
+  function isCreatedLikeStatus(status){return ['quote_created','submitted'].includes(String(status||'').toLowerCase());}
+  function sessionInfo(){try{return (getSession&&getSession().session)||{};}catch(e){return{};}}
+  function isTopAdmin(){return sessionInfo().role==='top_admin';}
 
   function applyDefaults(){
     const s=sessionInfo();
@@ -33,7 +32,7 @@
 
   function enhanceHeaderText(){
     const notice=document.querySelector('#appView .notice.show.ok');
-    if(notice) notice.innerHTML='<strong>Dashboard V4.1:</strong> Active orders load by default. Store access defaults to that store while still allowing cross-store filtering.';
+    if(notice) notice.innerHTML='<strong>Dashboard V4.2:</strong> Active orders load by default. Top Admin can manage store access values.';
     const helper=document.querySelector('.layout section.card .helper');
     if(helper) helper.textContent='Recent defaults to active orders only. Submitted legacy quotes are treated as active. Use the status filter to include Cancelled or Expired when needed.';
   }
@@ -73,8 +72,13 @@
         renderResultsPage();
       };
     });
+  }
+
+  function injectStyles(){
+    if(document.getElementById('staffV42Styles')) return;
     const style=document.createElement('style');
-    style.textContent='.sortable{background:transparent;border:0;color:#111827;font:inherit;font-weight:700;padding:0;min-height:0;border-radius:0;cursor:pointer;text-align:left}.sortable:after{content:" ↕";color:#667085;font-weight:400}.sortable.active.asc:after{content:" ↑";color:#b01c2e;font-weight:700}.sortable.active.desc:after{content:" ↓";color:#b01c2e;font-weight:700}.status.submitted{background:#eef2ff;color:#30358f}';
+    style.id='staffV42Styles';
+    style.textContent='.sortable{background:transparent;border:0;color:#111827;font:inherit;font-weight:700;padding:0;min-height:0;border-radius:0;cursor:pointer;text-align:left}.sortable:after{content:" ↕";color:#667085;font-weight:400}.sortable.active.asc:after{content:" ↑";color:#b01c2e;font-weight:700}.sortable.active.desc:after{content:" ↓";color:#b01c2e;font-weight:700}.status.submitted{background:#eef2ff;color:#30358f}.access-manager{margin-bottom:14px}.access-manager .access-grid{display:grid;grid-template-columns:1.2fr .8fr .8fr 1.2fr auto;gap:10px;align-items:end}.access-manager .access-table input{min-width:180px}.access-manager .access-table td,.access-manager .access-table th{white-space:nowrap}.access-badge{display:inline-block;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:700}.access-badge.active{background:#e7f7ed;color:#0b6b35}.access-badge.inactive{background:#fde8e8;color:#9b1c1c}@media(max-width:1060px){.access-manager .access-grid{grid-template-columns:1fr}.access-manager .access-table input{min-width:140px}}';
     document.head.appendChild(style);
   }
 
@@ -100,6 +104,113 @@
       else cmp=String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:'base'});
       return sortDir==='asc'?cmp:-cmp;
     });
+  }
+
+  function endpoint(path,body){
+    const h=authHeaders();
+    if(!h) return Promise.reject(new Error('Not signed in'));
+    return fetch(api+path,{method:'POST',headers:h,body:JSON.stringify(body||{})}).then(async res=>{
+      const data=await res.json().catch(()=>({}));
+      if(res.status===401){clearAccess();showLogin();throw new Error('Session expired. Sign in again.');}
+      if(!res.ok||!data.ok) throw new Error((data&&(data.error||data.message))||('HTTP '+res.status));
+      return data;
+    });
+  }
+
+  function ensureAccessManager(){
+    let card=document.getElementById('accessManagerCard');
+    if(!isTopAdmin()){
+      if(card) card.classList.add('hidden');
+      return;
+    }
+    if(!card){
+      card=document.createElement('section');
+      card.id='accessManagerCard';
+      card.className='card access-manager';
+      card.innerHTML='<h2>Access Management</h2><p class="helper">Top Admin only. Create, rotate, deactivate, and reactivate shared store access values. Actual values are never shown after save.</p><div class="access-grid"><div><label for="accessLabel">Access Label</label><input id="accessLabel" placeholder="Example: Tropicana Store Access"></div><div><label for="accessRole">Role</label><select id="accessRole"><option value="store">Store Access</option><option value="top_admin">Top Admin</option></select></div><div><label for="accessStore">Store</label><select id="accessStore"><option value="">No store / Admin</option><option value="18228">Tropicana</option><option value="18507">Horizon Ridge</option><option value="18690">Rainbow</option><option value="19117">Green Valley</option></select></div><div><label for="accessValue">New Access Value</label><input id="accessValue" type="password" autocomplete="new-password" placeholder="Minimum 8 characters"></div><div><button id="createAccessBtn" type="button">Create Access</button></div></div><div class="actions"><button id="refreshAccessBtn" class="secondary" type="button">Refresh Access List</button></div><div id="accessNotice" class="notice"></div><div class="table-wrap" style="margin-top:12px"><table class="table access-table"><thead><tr><th>Status</th><th>Label</th><th>Store</th><th>Role</th><th>Last Used</th><th>Rotated</th><th>New Value</th><th>Actions</th></tr></thead><tbody id="accessRows"><tr><td colspan="8" class="empty">Access list not loaded.</td></tr></tbody></table></div>';
+      const kpis=document.querySelector('.kpis');
+      kpis.parentNode.insertBefore(card,kpis.nextSibling);
+      q('accessStore').onchange=syncCreateLabel;
+      q('accessRole').onchange=syncCreateLabel;
+      q('createAccessBtn').onclick=createAccessValue;
+      q('refreshAccessBtn').onclick=loadAccessValues;
+    }
+    card.classList.remove('hidden');
+    syncCreateLabel();
+    loadAccessValues();
+  }
+
+  function syncCreateLabel(){
+    const role=q('accessRole')?.value||'store';
+    const store=q('accessStore')?.value||'';
+    const label=q('accessLabel');
+    if(!label || label.value.trim()) return;
+    if(role==='top_admin') label.value='Top Admin Access';
+    else if(store) label.value=(storeMap[store]||store)+' Store Access';
+  }
+
+  function accessShow(type,msg){show(q('accessNotice'),type,msg);}
+
+  async function loadAccessValues(){
+    if(!isTopAdmin() || !q('accessRows')) return;
+    q('accessRows').innerHTML='<tr><td colspan="8" class="empty">Loading access values...</td></tr>';
+    try{
+      const data=await endpoint('/api/staff/access/list',{});
+      const rows=data.access_keys||[];
+      if(!rows.length){
+        q('accessRows').innerHTML='<tr><td colspan="8" class="empty">No access values found.</td></tr>';
+        return;
+      }
+      q('accessRows').innerHTML=rows.map(row=>{
+        const active=row.is_active;
+        const status='<span class="access-badge '+(active?'active':'inactive')+'">'+(active?'Active':'Inactive')+'</span>';
+        const store=row.store_id?(safe(row.store_id)+' · '+safe(row.store_name||storeMap[row.store_id]||'')):'Admin';
+        const role=row.role==='top_admin'?'Top Admin':'Store';
+        return '<tr data-access-id="'+safe(row.id)+'"><td>'+status+'</td><td>'+safe(row.label)+'</td><td>'+store+'</td><td>'+role+'</td><td>'+shortDate(row.last_used_at)+'</td><td>'+shortDate(row.rotated_at)+'</td><td><input class="rotate-value" type="password" autocomplete="new-password" placeholder="New value"></td><td><button class="secondary rotate-btn" type="button">Rotate</button> <button class="'+(active?'danger':'good')+' active-btn" type="button">'+(active?'Deactivate':'Reactivate')+'</button></td></tr>';
+      }).join('');
+      Array.from(q('accessRows').querySelectorAll('tr[data-access-id]')).forEach(tr=>{
+        const id=tr.dataset.accessId;
+        tr.querySelector('.rotate-btn').onclick=()=>rotateAccessValue(id,tr.querySelector('.rotate-value'));
+        tr.querySelector('.active-btn').onclick=()=>toggleAccessValue(id,tr.querySelector('.active-btn').textContent==='Reactivate');
+      });
+    }catch(e){
+      q('accessRows').innerHTML='<tr><td colspan="8" class="empty">Access list failed: '+safe(e.message||e)+'</td></tr>';
+    }
+  }
+
+  async function createAccessValue(){
+    const label=q('accessLabel').value.trim();
+    const role=q('accessRole').value;
+    const storeId=q('accessStore').value;
+    const accessValue=q('accessValue').value.trim();
+    if(!label) return accessShow('bad','Enter an access label.');
+    if(!accessValue || accessValue.length<8) return accessShow('bad','Access value must be at least 8 characters.');
+    try{
+      await endpoint('/api/staff/access/create',{label,role,store_id:storeId,store_name:storeId?storeMap[storeId]||storeId:null,access_value:accessValue});
+      q('accessValue').value='';
+      q('accessLabel').value='';
+      accessShow('ok','Access value created. Save the phrase somewhere secure; it cannot be viewed again here.');
+      await loadAccessValues();
+    }catch(e){accessShow('bad','Create failed: '+String(e.message||e));}
+  }
+
+  async function rotateAccessValue(id,input){
+    const value=(input&&input.value||'').trim();
+    if(!value || value.length<8) return accessShow('bad','New access value must be at least 8 characters.');
+    try{
+      await endpoint('/api/staff/access/rotate',{id,access_value:value});
+      input.value='';
+      accessShow('ok','Access value rotated. Existing sessions for that access were revoked.');
+      await loadAccessValues();
+    }catch(e){accessShow('bad','Rotate failed: '+String(e.message||e));}
+  }
+
+  async function toggleAccessValue(id,active){
+    try{
+      await endpoint(active?'/api/staff/access/reactivate':'/api/staff/access/deactivate',{id});
+      accessShow('ok',active?'Access reactivated.':'Access deactivated and existing sessions revoked.');
+      await loadAccessValues();
+    }catch(e){accessShow('bad','Update failed: '+String(e.message||e));}
   }
 
   window.renderKpis=function(rows){
@@ -153,9 +264,8 @@
       const statusLabel=statusChoice==='active'?'active orders only':label(statusChoice);
       const storeLabel=storeChoice==='all'?'all stores':'store '+storeChoice;
       show(f.searchNotice,'ok',(isRecent?'Recent loaded. ':'Search complete. ')+allRows.length+' result(s), '+statusLabel+', '+storeLabel+'. Click a row to load details.');
-    }catch(e){
-      show(f.searchNotice,'bad','Search failed: '+String(e&&e.message?e.message:e));
-    }finally{busy(false);}
+    }catch(e){show(f.searchNotice,'bad','Search failed: '+String(e&&e.message?e.message:e));}
+    finally{busy(false);}
   };
 
   window.setWorkflow=function(quote){
@@ -164,34 +274,23 @@
     f.markReady.disabled=!quote||s!=='in_production';
     f.markCompleted.disabled=!quote||s!=='ready';
     f.cancel.disabled=!quote||['completed','cancelled','expired'].includes(s);
-    if(!quote){
-      f.workflowTitle.textContent='Workflow Actions';
-      f.workflowHelp.textContent='Actions activate after a quote is selected.';
-    }else if(isCreatedLikeStatus(s)){
-      f.workflowTitle.textContent='Next Step: Collect Payment';
-      f.workflowHelp.textContent='Use Mark Paid only after in-store POS payment is completed. POS receipt is required.';
-    }else if(s==='in_production'){
-      f.workflowTitle.textContent='Next Step: Mark Ready';
-      f.workflowHelp.textContent='Use when the completed order is received from the vendor.';
-    }else if(s==='ready'){
-      f.workflowTitle.textContent='Next Step: Complete Order';
-      f.workflowHelp.textContent='Use when the order has been transferred to the customer.';
-    }else if(s==='completed'){
-      f.workflowTitle.textContent='Order Complete';
-      f.workflowHelp.textContent='This order is closed. Avoid changes unless correcting an admin error.';
-    }else{
-      f.workflowTitle.textContent='Order Not Active';
-      f.workflowHelp.textContent='This quote/order is cancelled or expired.';
-    }
+    if(!quote){f.workflowTitle.textContent='Workflow Actions';f.workflowHelp.textContent='Actions activate after a quote is selected.';}
+    else if(isCreatedLikeStatus(s)){f.workflowTitle.textContent='Next Step: Collect Payment';f.workflowHelp.textContent='Use Mark Paid only after in-store POS payment is completed. POS receipt is required.';}
+    else if(s==='in_production'){f.workflowTitle.textContent='Next Step: Mark Ready';f.workflowHelp.textContent='Use when the completed order is received from the vendor.';}
+    else if(s==='ready'){f.workflowTitle.textContent='Next Step: Complete Order';f.workflowHelp.textContent='Use when the order has been transferred to the customer.';}
+    else if(s==='completed'){f.workflowTitle.textContent='Order Complete';f.workflowHelp.textContent='This order is closed. Avoid changes unless correcting an admin error.';}
+    else{f.workflowTitle.textContent='Order Not Active';f.workflowHelp.textContent='This quote/order is cancelled or expired.';}
   };
 
   const originalShowApp=showApp;
-  window.showApp=function(){originalShowApp();applyDefaults();enhanceHeaderText();enhanceStatusFilter();enhanceSortableHeaders();};
+  window.showApp=function(){originalShowApp();applyDefaults();enhanceHeaderText();enhanceStatusFilter();enhanceSortableHeaders();injectStyles();ensureAccessManager();};
   const originalClearSearch=clearSearch;
   window.clearSearch=function(){originalClearSearch();applyDefaults();};
 
+  injectStyles();
   enhanceHeaderText();
   enhanceStatusFilter();
   enhanceSortableHeaders();
   applyDefaults();
+  ensureAccessManager();
 })();
