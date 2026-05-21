@@ -839,6 +839,70 @@ function paidStoreNoticeText(quote, items) {
   ].join('\n');
 }
 
+function readyCustomerHtml(quote, items, readyPhrase) {
+  return emailShell('Your screen order is ready', `
+    <p>Your screen order is ${esc(readyPhrase)}.</p>
+    <p>Please contact or visit ${esc(quote.store_name)} with any questions.</p>
+    ${quoteSummaryHtml(quote, items)}
+  `);
+}
+
+function readyCustomerText(quote, items, readyPhrase) {
+  return [
+    'Your screen order is ' + readyPhrase + '.',
+    'Please contact or visit ' + quote.store_name + ' with any questions.',
+    '',
+    quoteSummaryText(quote, items)
+  ].join('\n');
+}
+
+function readyStoreHtml(quote, items, readyPhrase) {
+  return emailShell('Screen order ready', `
+    <p>This order was marked ${esc(readyPhrase)}.</p>
+    ${quoteSummaryHtml(quote, items)}
+  `);
+}
+
+function readyStoreText(quote, items, readyPhrase) {
+  return [
+    'This order was marked ' + readyPhrase + '.',
+    '',
+    quoteSummaryText(quote, items)
+  ].join('\n');
+}
+
+function completedCustomerHtml(quote, items) {
+  return emailShell('Your screen order is complete', `
+    <p>Your screen order has been completed. Thank you for shopping SKYE ACE Hardware.</p>
+    <p>Please keep this quote information. If you need new screens in the future, we can use this record to help build your next quote faster.</p>
+    ${quoteSummaryHtml(quote, items)}
+  `);
+}
+
+function completedCustomerText(quote, items) {
+  return [
+    'Your screen order has been completed. Thank you for shopping SKYE ACE Hardware.',
+    'Please keep this quote information. If you need new screens in the future, we can use this record to help build your next quote faster.',
+    '',
+    quoteSummaryText(quote, items)
+  ].join('\n');
+}
+
+function completedStoreHtml(quote, items) {
+  return emailShell('Screen order completed', `
+    <p>This order was marked completed.</p>
+    ${quoteSummaryHtml(quote, items)}
+  `);
+}
+
+function completedStoreText(quote, items) {
+  return [
+    'This order was marked completed.',
+    '',
+    quoteSummaryText(quote, items)
+  ].join('\n');
+}
+
 function quoteSummaryHtml(quote, items) {
   const rows = items.map((item, index) => `
     <tr>
