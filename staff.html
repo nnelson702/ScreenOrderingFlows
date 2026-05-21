@@ -131,22 +131,105 @@
 
 <script>
 const api='https://screen-ordering-api.nnelson.workers.dev';
-const sessionKey='screen_admin_staff_access';
+const sessionKey='screen_admin_staff_session';
 const pageSize=18;
 let allRows=[],currentPage=1,selectedQuote=null,selectedId='';
 const q=id=>document.getElementById(id);
 const f={loginView:q('loginView'),appView:q('appView'),headerActions:q('headerActions'),staffToken:q('staffToken'),loginBtn:q('loginBtn'),clearLogin:q('clearLoginBtn'),loginNotice:q('loginNotice'),lockBtn:q('lockBtn'),signOutBtn:q('signOutBtn'),search:q('searchText'),statusFilter:q('statusFilter'),storeFilter:q('storeFilter'),searchBtn:q('searchBtn'),recentBtn:q('recentBtn'),clearSearch:q('clearSearchBtn'),searchNotice:q('searchNotice'),results:q('resultsBody'),pageInfo:q('pageInfo'),prev:q('prevPageBtn'),next:q('nextPageBtn'),quote:q('quoteId'),active:q('activeQuoteId'),view:q('viewToken'),load:q('loadQuoteBtn'),manual:q('manualSelectBtn'),status:q('statusSelect'),method:q('paymentMethod'),receipt:q('posReceiptNumber'),notes:q('posNotes'),update:q('updateStatusBtn'),clear:q('clearFormBtn'),result:q('resultNotice'),preview:q('quotePreview'),selectedNotice:q('selectedNotice'),workflowTitle:q('workflowTitle'),workflowHelp:q('workflowHelp'),markPaid:q('markPaidBtn'),markReady:q('markReadyBtn'),markCompleted:q('markCompletedBtn'),cancel:q('cancelBtn')};
-function getAccess(){return sessionStorage.getItem(sessionKey)||''}
-function setAccess(v){sessionStorage.setItem(sessionKey,v)}
-function clearAccess(){sessionStorage.removeItem(sessionKey)}
-function authHeaders(){const access=getAccess();if(!access)return null;const h={'Content-Type':'application/json'};h['Author'+'ization']='Bear'+'er '+access;return h}
-function showLogin(){f.loginView.classList.remove('hidden');f.appView.classList.add('hidden');f.headerActions.classList.add('hidden')}
-function showApp(){f.loginView.classList.add('hidden');f.appView.classList.remove('hidden');f.headerActions.classList.remove('hidden')}
-async function validateAccess(access){const h={'Content-Type':'application/json'};h['Author'+'ization']='Bear'+'er '+access;const res=await fetch(api+'/api/quote/search',{method:'POST',headers:h,body:JSON.stringify({search:'',status:'all',store_id:'all',limit:1})});return res.ok}
-f.loginBtn.onclick=async()=>{const v=f.staffToken.value.trim();if(!v)return show(f.loginNotice,'bad','Enter the staff access value.');setBusyLogin(true);show(f.loginNotice,'warn','Checking access...');try{const ok=await validateAccess(v);if(!ok){clearAccess();return show(f.loginNotice,'bad','Access rejected. Check the staff access value.')}setAccess(v);f.staffToken.value='';showApp();await searchDashboard(true)}catch(e){show(f.loginNotice,'bad','Access check failed: '+String(e&&e.message?e.message:e))}finally{setBusyLogin(false)}};
-f.clearLogin.onclick=()=>{f.staffToken.value='';show(f.loginNotice,'warn','Entry cleared.')};
-f.lockBtn.onclick=()=>{showLogin()};
-f.signOutBtn.onclick=()=>{clearAccess();clearForm();clearSearch();showLogin()};
+
+function getSession(){
+  try{return JSON.parse(sessionStorage.getItem(sessionKey)||'null')||{}}
+  catch(e){return{}}
+}
+
+function setSession(session){
+  sessionStorage.setItem(sessionKey,JSON.stringify(session||{}))
+}
+
+function getAccess(){
+  return getSession().token||''
+}
+
+function clearAccess(){
+  sessionStorage.removeItem(sessionKey)
+}
+
+function authHeaders(){
+  const access=getAccess();
+  if(!access)return null;
+  const h={'Content-Type':'application/json'};
+  h['Author'+'ization']='Bear'+'er '+access;
+  return h
+}
+
+function showLogin(){
+  f.loginView.classList.remove('hidden');
+  f.appView.classList.add('hidden');
+  f.headerActions.classList.add('hidden')
+}
+
+function showApp(){
+  f.loginView.classList.add('hidden');
+  f.appView.classList.remove('hidden');
+  f.headerActions.classList.remove('hidden')
+}
+
+async function staffLogin(accessValue){
+  const res=await fetch(api+'/api/staff/login',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({access_value:accessValue})
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok||!data.ok){
+    throw new Error((data&&(data.error||data.message))||('HTTP '+res.status))
+  }
+  return data
+}
+
+async function staffLogout(){
+  const h=authHeaders();
+  if(!h)return;
+  try{
+    await fetch(api+'/api/staff/logout',{method:'POST',headers:h,body:JSON.stringify({})})
+  }catch(e){}
+}
+
+f.loginBtn.onclick=async()=>{
+  const v=f.staffToken.value.trim();
+  if(!v)return show(f.loginNotice,'bad','Enter the staff access value.');
+  setBusyLogin(true);
+  show(f.loginNotice,'warn','Checking access...');
+  try{
+    const data=await staffLogin(v);
+    setSession({token:data.token,session:data.session||{}});
+    f.staffToken.value='';
+    showApp();
+    await searchDashboard(true)
+  }catch(e){
+    clearAccess();
+    show(f.loginNotice,'bad','Access rejected: '+String(e&&e.message?e.message:e))
+  }finally{
+    setBusyLogin(false)
+  }
+};
+
+f.clearLogin.onclick=()=>{
+  f.staffToken.value='';
+  show(f.loginNotice,'warn','Entry cleared.')
+};
+
+f.lockBtn.onclick=()=>{
+  showLogin()
+};
+
+f.signOutBtn.onclick=async()=>{
+  await staffLogout();
+  clearAccess();
+  clearForm();
+  clearSearch();
+  showLogin()
+};
 f.status.onchange=sync;
 f.update.onclick=()=>updateStatus(f.status.value);
 f.clear.onclick=clearForm;
