@@ -1,0 +1,1 @@
+Staff Dashboard V3 planned frontend-only improvements: paging, selected-row highlight, workflow-aware status actions, and selected-order detail moved beside the result list.
