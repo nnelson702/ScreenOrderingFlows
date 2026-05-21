@@ -12,7 +12,7 @@ export default {
           ok: true,
           service: 'screen-ordering-api',
           message: 'API is running. Use /health for diagnostics.',
-          phase: 'staff-status-v1'
+          phase: 'admin-dashboard-v2'
         }));
       }
 
@@ -20,7 +20,7 @@ export default {
         return cors(request, env, json({
           ok: true,
           service: 'screen-ordering-api',
-          phase: 'staff-status-v1',
+          phase: 'admin-dashboard-v2',
           env: envStatus(env)
         }));
       }
@@ -41,6 +41,14 @@ export default {
       if (request.method === 'GET' && url.pathname.startsWith('/api/quote/view/')) {
         const viewToken = url.pathname.split('/').pop();
         return cors(request, env, await viewQuote(env, viewToken));
+      }
+
+      if (request.method === 'POST' && url.pathname === '/api/quote/search') {
+        return cors(request, env, await searchQuotes(request, env));
+      }
+
+      if (request.method === 'POST' && url.pathname === '/api/quote/admin-view') {
+        return cors(request, env, await adminViewQuote(request, env));
       }
 
       if (request.method === 'POST' && url.pathname === '/api/quote/status') {
