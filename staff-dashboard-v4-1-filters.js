@@ -1,8 +1,16 @@
 // Staff Dashboard V4.1 active/store defaults and sortable results.
 (function(){
-  const activeStatuses=['quote_created','in_production','ready','completed'];
+  const inactiveStatuses=['cancelled','expired'];
   let sortKey='created_at';
   let sortDir='desc';
+
+  function isActiveStatus(status){
+    return !inactiveStatuses.includes(String(status||'').toLowerCase());
+  }
+
+  function isCreatedLikeStatus(status){
+    return ['quote_created','submitted'].includes(String(status||'').toLowerCase());
+  }
 
   function sessionInfo(){
     try{return (getSession&&getSession().session)||{};}catch(e){return{};}
@@ -27,7 +35,7 @@
     const notice=document.querySelector('#appView .notice.show.ok');
     if(notice) notice.innerHTML='<strong>Dashboard V4.1:</strong> Active orders load by default. Store access defaults to that store while still allowing cross-store filtering.';
     const helper=document.querySelector('.layout section.card .helper');
-    if(helper) helper.textContent='Recent defaults to active orders only. Use the status filter to include Cancelled or Expired when needed.';
+    if(helper) helper.textContent='Recent defaults to active orders only. Submitted legacy quotes are treated as active. Use the status filter to include Cancelled or Expired when needed.';
   }
 
   function enhanceStatusFilter(){
@@ -37,6 +45,14 @@
       active.value='active';
       active.textContent='Active Only';
       f.statusFilter.insertBefore(active,f.statusFilter.firstChild);
+    }
+    if(!Array.from(f.statusFilter.options).some(o=>o.value==='submitted')){
+      const submitted=document.createElement('option');
+      submitted.value='submitted';
+      submitted.textContent='Submitted Legacy';
+      const quoteCreated=Array.from(f.statusFilter.options).find(o=>o.value==='quote_created');
+      if(quoteCreated && quoteCreated.nextSibling) f.statusFilter.insertBefore(submitted,quoteCreated.nextSibling);
+      else f.statusFilter.appendChild(submitted);
     }
     const all=Array.from(f.statusFilter.options).find(o=>o.value==='all');
     if(all) all.textContent='All Including Cancelled/Expired';
@@ -58,7 +74,7 @@
       };
     });
     const style=document.createElement('style');
-    style.textContent='.sortable{background:transparent;border:0;color:#111827;font:inherit;font-weight:700;padding:0;min-height:0;border-radius:0;cursor:pointer;text-align:left}.sortable:after{content:" ↕";color:#667085;font-weight:400}.sortable.active.asc:after{content:" ↑";color:#b01c2e;font-weight:700}.sortable.active.desc:after{content:" ↓";color:#b01c2e;font-weight:700}';
+    style.textContent='.sortable{background:transparent;border:0;color:#111827;font:inherit;font-weight:700;padding:0;min-height:0;border-radius:0;cursor:pointer;text-align:left}.sortable:after{content:" ↕";color:#667085;font-weight:400}.sortable.active.asc:after{content:" ↑";color:#b01c2e;font-weight:700}.sortable.active.desc:after{content:" ↓";color:#b01c2e;font-weight:700}.status.submitted{background:#eef2ff;color:#30358f}';
     document.head.appendChild(style);
   }
 
@@ -85,6 +101,15 @@
       return sortDir==='asc'?cmp:-cmp;
     });
   }
+
+  window.renderKpis=function(rows){
+    const count=s=>rows.filter(r=>r.status===s).length;
+    q('kpiCreated').textContent=rows.filter(r=>isCreatedLikeStatus(r.status)).length;
+    q('kpiProduction').textContent=count('in_production');
+    q('kpiReady').textContent=count('ready');
+    q('kpiCompleted').textContent=count('completed');
+    q('kpiTotal').textContent=rows.length;
+  };
 
   window.renderResultsPage=function(){
     updateSortHeaders();
@@ -121,7 +146,7 @@
       if(res.status===401){clearAccess();showLogin();return show(f.loginNotice,'bad','Session expired or access rejected. Sign in again.');}
       if(!res.ok||!data.ok) return show(f.searchNotice,'bad','Search failed: '+((data&&(data.error||data.message))||('HTTP '+res.status)));
       const rows=data.quotes||[];
-      allRows=statusChoice==='active'?rows.filter(r=>activeStatuses.includes(r.status)):rows;
+      allRows=statusChoice==='active'?rows.filter(r=>isActiveStatus(r.status)):rows;
       currentPage=1;
       renderKpis(allRows);
       renderResultsPage();
@@ -131,6 +156,33 @@
     }catch(e){
       show(f.searchNotice,'bad','Search failed: '+String(e&&e.message?e.message:e));
     }finally{busy(false);}
+  };
+
+  window.setWorkflow=function(quote){
+    const s=quote&&quote.status;
+    f.markPaid.disabled=!quote||!isCreatedLikeStatus(s);
+    f.markReady.disabled=!quote||s!=='in_production';
+    f.markCompleted.disabled=!quote||s!=='ready';
+    f.cancel.disabled=!quote||['completed','cancelled','expired'].includes(s);
+    if(!quote){
+      f.workflowTitle.textContent='Workflow Actions';
+      f.workflowHelp.textContent='Actions activate after a quote is selected.';
+    }else if(isCreatedLikeStatus(s)){
+      f.workflowTitle.textContent='Next Step: Collect Payment';
+      f.workflowHelp.textContent='Use Mark Paid only after in-store POS payment is completed. POS receipt is required.';
+    }else if(s==='in_production'){
+      f.workflowTitle.textContent='Next Step: Mark Ready';
+      f.workflowHelp.textContent='Use when the completed order is received from the vendor.';
+    }else if(s==='ready'){
+      f.workflowTitle.textContent='Next Step: Complete Order';
+      f.workflowHelp.textContent='Use when the order has been transferred to the customer.';
+    }else if(s==='completed'){
+      f.workflowTitle.textContent='Order Complete';
+      f.workflowHelp.textContent='This order is closed. Avoid changes unless correcting an admin error.';
+    }else{
+      f.workflowTitle.textContent='Order Not Active';
+      f.workflowHelp.textContent='This quote/order is cancelled or expired.';
+    }
   };
 
   const originalShowApp=showApp;
