@@ -306,7 +306,7 @@ async function viewQuote(env, viewToken) {
 }
 
 async function searchQuotes(request, env) {
-  const staff = requireStaff(request, env);
+  const staff = await requireStaff(request, env);
   if (!staff.ok) return staff.response;
 
   let body;
@@ -357,7 +357,7 @@ async function searchQuotes(request, env) {
 }
 
 async function adminViewQuote(request, env) {
-  const staff = requireStaff(request, env);
+  const staff = await requireStaff(request, env);
   if (!staff.ok) return staff.response;
 
   let body;
@@ -379,7 +379,7 @@ async function adminViewQuote(request, env) {
 }
 
 async function updateQuoteStatus(request, env) {
-  const staff = requireStaff(request, env);
+  const staff = await requireStaff(request, env);
   if (!staff.ok) return staff.response;
 
   let body;
@@ -507,29 +507,389 @@ async function loadQuoteWithItemsByFilter(env, filter) {
   };
 }
 
-function requireStaff(request, env) {
-  const missing = missingEnv(env, ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'STAFF_API_KEY']);
-  if (missing.length) {
-    return {
-      ok: false,
-      response: json({
-        ok: false,
-        error: 'Missing required staff environment variables',
-        missing,
-        env: envStatus(env)
-      }, 500)
-    };
-  }
-
+async function requireStaff(request, env) {
   const auth = request.headers.get('Authorization') || '';
-  if (auth !== 'Bearer ' + env.STAFF_API_KEY) {
+  const tokenValue = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+
+  if (!tokenValue) {
     return {
       ok: false,
       response: json({ ok: false, error: 'Unauthorized' }, 401)
     };
   }
 
-  return { ok: true };
+  if (env.STAFF_API_KEY && tokenValue === env.STAFF_API_KEY) {
+    return {
+      ok: true,
+      staff: {
+        role: 'top_admin',
+        label: 'Legacy STAFF_API_KEY',
+        legacy: true
+      }
+    };
+  }
+
+  const missing = missingEnv(env, ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']);
+  if (missing.length) {
+    return {
+      ok: false,
+      response: json({
+        ok: false,
+        error: 'Missing required staff session environment variables',
+        missing,
+        env: envStatus(env)
+      }, 500)
+    };
+  }
+
+  const tokenHash = await sha256Hex(tokenValue);
+  const now = new Date().toISOString();
+
+  const sessionResult = await sbSelect(
+    env,
+    'staff_sessions',
+    'token_hash=eq.' + encodeURIComponent(tokenHash) +
+      '&revoked_at=is.null' +
+      '&expires_at=gt.' + encodeURIComponent(now) +
+      '&limit=1'
+  );
+
+  if (!sessionResult.ok) {
+    return {
+      ok: false,
+      response: json({
+        ok: false,
+        error: 'Staff session lookup failed',
+        details: sessionResult.error
+      }, 500)
+    };
+  }
+
+  const session = sessionResult.data && sessionResult.data[0];
+  if (!session) {
+    return {
+      ok: false,
+      response: json({ ok: false, error: 'Unauthorized or expired staff session' }, 401)
+    };
+  }
+
+  await sbPatch(env, 'staff_sessions', 'id=eq.' + encodeURIComponent(session.id), {
+    last_used_at: now
+  });
+
+  return {
+    ok: true,
+    staff: {
+      session_id: session.id,
+      access_key_id: session.access_key_id,
+      role: session.role,
+      label: session.label,
+      store_id: session.store_id,
+      store_name: session.store_name
+    }
+  };
+}
+
+async function requireTopAdmin(request, env) {
+  const staff = await requireStaff(request, env);
+  if (!staff.ok) return staff;
+
+  const role = staff.staff && staff.staff.role;
+  if (role !== 'top_admin') {
+    return {
+      ok: false,
+      response: json({ ok: false, error: 'Top admin access required' }, 403)
+    };
+  }
+
+  return staff;
+}
+
+async function staffLogin(request, env) {
+  const missing = missingEnv(env, ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']);
+  if (missing.length) {
+    return json({
+      ok: false,
+      error: 'Missing required staff login environment variables',
+      missing,
+      env: envStatus(env)
+    }, 500);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (err) {
+    return json({ ok: false, error: 'Invalid JSON body' }, 400);
+  }
+
+  const accessValue = clean(
+    body.access_value ||
+    body.staff_access ||
+    body.passphrase ||
+    body.password
+  );
+
+  if (!accessValue) {
+    return json({ ok: false, error: 'Missing staff access value' }, 400);
+  }
+
+  const accessHash = await sha256Hex(accessValue);
+
+  const accessResult = await sbSelect(
+    env,
+    'staff_access_keys',
+    'access_hash=eq.' + encodeURIComponent(accessHash) +
+      '&is_active=eq.true' +
+      '&limit=1'
+  );
+
+  if (!accessResult.ok) {
+    return json({
+      ok: false,
+      error: 'Staff access lookup failed',
+      details: accessResult.error
+    }, 500);
+  }
+
+  const accessKey = accessResult.data && accessResult.data[0];
+  if (!accessKey) {
+    return json({ ok: false, error: 'Access rejected' }, 401);
+  }
+
+  const sessionToken = token(64);
+  const sessionTokenHash = await sha256Hex(sessionToken);
+  const now = new Date().toISOString();
+  const sessionHours = Math.min(Math.max(Number(env.STAFF_SESSION_HOURS || 12), 1), 24);
+  const expiresAt = new Date(Date.now() + sessionHours * 60 * 60 * 1000).toISOString();
+
+  const insertedSession = await sbInsert(env, 'staff_sessions', {
+    access_key_id: accessKey.id,
+    role: accessKey.role,
+    label: accessKey.label,
+    store_id: accessKey.store_id,
+    store_name: accessKey.store_name,
+    token_hash: sessionTokenHash,
+    expires_at: expiresAt,
+    last_used_at: now
+  });
+
+  if (!insertedSession.ok) {
+    return json({
+      ok: false,
+      error: 'Staff session create failed',
+      details: insertedSession.error
+    }, 500);
+  }
+
+  await sbPatch(env, 'staff_access_keys', 'id=eq.' + encodeURIComponent(accessKey.id), {
+    last_used_at: now
+  });
+
+  const session = insertedSession.data && insertedSession.data[0];
+
+  return json({
+    ok: true,
+    token: sessionToken,
+    session: {
+      id: session ? session.id : null,
+      role: accessKey.role,
+      label: accessKey.label,
+      store_id: accessKey.store_id,
+      store_name: accessKey.store_name,
+      expires_at: expiresAt
+    }
+  });
+}
+
+async function staffLogout(request, env) {
+  const staff = await requireStaff(request, env);
+  if (!staff.ok) return staff.response;
+
+  if (staff.staff && staff.staff.session_id) {
+    await sbPatch(env, 'staff_sessions', 'id=eq.' + encodeURIComponent(staff.staff.session_id), {
+      revoked_at: new Date().toISOString()
+    });
+  }
+
+  return json({ ok: true });
+}
+
+async function listStaffAccess(request, env) {
+  const admin = await requireTopAdmin(request, env);
+  if (!admin.ok) return admin.response;
+
+  const result = await sbSelect(env, 'staff_access_keys', 'order=store_id.asc,label.asc');
+
+  if (!result.ok) {
+    return json({
+      ok: false,
+      error: 'Staff access list failed',
+      details: result.error
+    }, 500);
+  }
+
+  return json({
+    ok: true,
+    access_keys: (result.data || []).map(safeStaffAccessKey)
+  });
+}
+
+async function createStaffAccess(request, env) {
+  const admin = await requireTopAdmin(request, env);
+  if (!admin.ok) return admin.response;
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (err) {
+    return json({ ok: false, error: 'Invalid JSON body' }, 400);
+  }
+
+  const label = clean(body.label);
+  const storeId = clean(body.store_id);
+  const storeName = clean(body.store_name);
+  const role = clean(body.role || 'store').toLowerCase();
+  const accessValue = clean(body.access_value || body.passphrase || body.password);
+
+  if (!label) return json({ ok: false, error: 'Missing label' }, 400);
+  if (!['store', 'top_admin'].includes(role)) return json({ ok: false, error: 'Invalid role' }, 400);
+  if (!accessValue || accessValue.length < 8) {
+    return json({ ok: false, error: 'Access value must be at least 8 characters' }, 400);
+  }
+
+  const accessHash = await sha256Hex(accessValue);
+
+  const inserted = await sbInsert(env, 'staff_access_keys', {
+    label,
+    store_id: storeId || null,
+    store_name: storeName || null,
+    role,
+    access_hash: accessHash,
+    is_active: true,
+    created_by_access_key_id: admin.staff.access_key_id || null
+  });
+
+  if (!inserted.ok) {
+    return json({
+      ok: false,
+      error: 'Staff access create failed',
+      details: inserted.error
+    }, 500);
+  }
+
+  return json({
+    ok: true,
+    access_key: safeStaffAccessKey(inserted.data && inserted.data[0])
+  });
+}
+
+async function rotateStaffAccess(request, env) {
+  const admin = await requireTopAdmin(request, env);
+  if (!admin.ok) return admin.response;
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (err) {
+    return json({ ok: false, error: 'Invalid JSON body' }, 400);
+  }
+
+  const id = clean(body.id || body.access_key_id);
+  const accessValue = clean(body.access_value || body.passphrase || body.password);
+
+  if (!id) return json({ ok: false, error: 'Missing access key id' }, 400);
+  if (!accessValue || accessValue.length < 8) {
+    return json({ ok: false, error: 'New access value must be at least 8 characters' }, 400);
+  }
+
+  const now = new Date().toISOString();
+  const accessHash = await sha256Hex(accessValue);
+
+  const updated = await sbPatch(env, 'staff_access_keys', 'id=eq.' + encodeURIComponent(id), {
+    access_hash: accessHash,
+    is_active: true,
+    rotated_at: now,
+    revoked_at: null
+  });
+
+  if (!updated.ok) {
+    return json({
+      ok: false,
+      error: 'Staff access rotation failed',
+      details: updated.error
+    }, 500);
+  }
+
+  await sbPatch(env, 'staff_sessions', 'access_key_id=eq.' + encodeURIComponent(id), {
+    revoked_at: now
+  });
+
+  return json({ ok: true, id, rotated_at: now });
+}
+
+async function setStaffAccessActive(request, env, active) {
+  const admin = await requireTopAdmin(request, env);
+  if (!admin.ok) return admin.response;
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (err) {
+    return json({ ok: false, error: 'Invalid JSON body' }, 400);
+  }
+
+  const id = clean(body.id || body.access_key_id);
+  if (!id) return json({ ok: false, error: 'Missing access key id' }, 400);
+
+  const now = new Date().toISOString();
+
+  const patch = active
+    ? { is_active: true, revoked_at: null }
+    : { is_active: false, revoked_at: now };
+
+  const updated = await sbPatch(env, 'staff_access_keys', 'id=eq.' + encodeURIComponent(id), patch);
+
+  if (!updated.ok) {
+    return json({
+      ok: false,
+      error: active ? 'Staff access reactivate failed' : 'Staff access deactivate failed',
+      details: updated.error
+    }, 500);
+  }
+
+  if (!active) {
+    await sbPatch(env, 'staff_sessions', 'access_key_id=eq.' + encodeURIComponent(id), {
+      revoked_at: now
+    });
+  }
+
+  return json({ ok: true, id, is_active: active });
+}
+
+function safeStaffAccessKey(row) {
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    label: row.label,
+    store_id: row.store_id,
+    store_name: row.store_name,
+    role: row.role,
+    is_active: row.is_active,
+    created_at: row.created_at,
+    rotated_at: row.rotated_at,
+    revoked_at: row.revoked_at,
+    last_used_at: row.last_used_at
+  };
+}
+
+async function sha256Hex(value) {
+  const bytes = new TextEncoder().encode(String(value || ''));
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 function adminQuoteSummary(quote) {
