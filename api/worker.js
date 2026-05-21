@@ -12,7 +12,7 @@ export default {
           ok: true,
           service: 'screen-ordering-api',
           message: 'API is running. Use /health for diagnostics.',
-          phase: 'admin-dashboard-v2'
+          phase: 'staff-access-sessions-v1'
         }));
       }
 
@@ -20,9 +20,37 @@ export default {
         return cors(request, env, json({
           ok: true,
           service: 'screen-ordering-api',
-          phase: 'admin-dashboard-v2',
+          phase: 'staff-access-sessions-v1',
           env: envStatus(env)
         }));
+      }
+
+      if (request.method === 'POST' && url.pathname === '/api/staff/login') {
+        return cors(request, env, await staffLogin(request, env));
+      }
+
+      if (request.method === 'POST' && url.pathname === '/api/staff/logout') {
+        return cors(request, env, await staffLogout(request, env));
+      }
+
+      if (request.method === 'POST' && url.pathname === '/api/staff/access/list') {
+        return cors(request, env, await listStaffAccess(request, env));
+      }
+
+      if (request.method === 'POST' && url.pathname === '/api/staff/access/create') {
+        return cors(request, env, await createStaffAccess(request, env));
+      }
+
+      if (request.method === 'POST' && url.pathname === '/api/staff/access/rotate') {
+        return cors(request, env, await rotateStaffAccess(request, env));
+      }
+
+      if (request.method === 'POST' && url.pathname === '/api/staff/access/deactivate') {
+        return cors(request, env, await setStaffAccessActive(request, env, false));
+      }
+
+      if (request.method === 'POST' && url.pathname === '/api/staff/access/reactivate') {
+        return cors(request, env, await setStaffAccessActive(request, env, true));
       }
 
       if (request.method === 'GET' && url.pathname === '/api/quote/create') {
