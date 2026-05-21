@@ -671,6 +671,55 @@ async function sendPaymentReceivedEmails(env, quote, items) {
   return { attempted: true, results };
 }
 
+async function sendReadyEmails(env, quote, items) {
+  if (!env.RESEND_API_KEY) return { skipped: true, reason: 'RESEND_API_KEY not set' };
+
+  const fulfillment = clean(quote.fulfillment_method || 'pickup').toLowerCase();
+  const readyPhrase = fulfillment === 'delivery'
+    ? 'ready for delivery scheduling'
+    : 'ready for pickup';
+
+  const results = [];
+
+  results.push(await sendEmail(env, {
+    to: quote.customer_email,
+    subject: 'Your Helpful ACE screen order is ready',
+    html: readyCustomerHtml(quote, items, readyPhrase),
+    text: readyCustomerText(quote, items, readyPhrase)
+  }));
+
+  results.push(await sendEmail(env, {
+    to: quote.store_email,
+    subject: 'Screen order ready - ' + quote.customer_name,
+    html: readyStoreHtml(quote, items, readyPhrase),
+    text: readyStoreText(quote, items, readyPhrase)
+  }));
+
+  return { attempted: true, results };
+}
+
+async function sendCompletedEmails(env, quote, items) {
+  if (!env.RESEND_API_KEY) return { skipped: true, reason: 'RESEND_API_KEY not set' };
+
+  const results = [];
+
+  results.push(await sendEmail(env, {
+    to: quote.customer_email,
+    subject: 'Your Helpful ACE screen order is complete',
+    html: completedCustomerHtml(quote, items),
+    text: completedCustomerText(quote, items)
+  }));
+
+  results.push(await sendEmail(env, {
+    to: quote.store_email,
+    subject: 'Screen order completed - ' + quote.customer_name,
+    html: completedStoreHtml(quote, items),
+    text: completedStoreText(quote, items)
+  }));
+
+  return { attempted: true, results };
+}
+
 async function sendEmail(env, message) {
   const from = env.RESEND_FROM || 'Helpful ACE Screen Quotes <onboarding@resend.dev>';
   const payload = {
