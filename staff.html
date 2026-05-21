@@ -3,74 +3,186 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Screen Admin Dashboard</title>
-  <link rel="stylesheet" href="staff-dashboard-v3.css">
+  <title>Screen Admin Portal</title>
   <style>
-    :root{--red:#b01c2e;--dark:#111827;--muted:#6b7280;--line:#d8dde6;--soft:#f4f6f8;--bad:#a31621;--good:#0b6b35;--warn:#805000;}
-    *{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--dark);background:#f3f4f6} header{background:var(--red);color:#fff;padding:18px 24px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.16)} header img{width:54px;height:54px;object-fit:contain;background:#fff;border-radius:8px;padding:4px} header h1{margin:0;font-size:26px;line-height:1.05} header p{margin:4px 0 0;font-size:15px;opacity:.92} main{max-width:1380px;margin:0 auto;padding:24px 16px 48px}.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(390px,.85fr);gap:16px;align-items:start}.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 4px 14px rgba(17,24,39,.06)} h2{margin:0 0 12px;font-size:22px} h3{margin:18px 0 10px;font-size:17px}.helper{margin:0 0 14px;color:var(--muted);line-height:1.45} label{display:block;font-weight:700;margin:12px 0 6px} input,select,textarea{width:100%;border:1px solid #c9d0dc;border-radius:10px;padding:10px 11px;font:inherit;background:#fff} textarea{min-height:88px;resize:vertical}.row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.row3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px} button{border:0;border-radius:999px;padding:11px 16px;background:var(--red);color:#fff;font-weight:700;cursor:pointer;min-height:42px} button.secondary{background:#e5e7eb;color:#111827} button.danger{background:var(--bad)} button:disabled{opacity:.55;cursor:not-allowed}.notice{border-radius:12px;padding:11px 13px;margin-top:12px;line-height:1.45;display:none}.notice.show{display:block}.notice.ok{background:#e7f7ed;color:var(--good);border:1px solid #b7e2c4}.notice.warn{background:#fff4dc;color:var(--warn);border:1px solid #f3d28d}.notice.bad{background:#fde8e8;color:#9b1c1c;border:1px solid #f3b4b4}.status{display:inline-block;border-radius:999px;padding:4px 8px;background:#e5e7eb;font-size:12px;font-weight:700}.status.quote_created{background:#eef2ff;color:#30358f}.status.in_production{background:#fff4dc;color:#805000}.status.ready{background:#e7f7ed;color:#0b6b35}.status.completed{background:#e8f1ff;color:#124a8c}.status.cancelled,.status.expired{background:#fde8e8;color:#9b1c1c}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff}.table{width:100%;border-collapse:collapse;font-size:14px}.table th,.table td{border-bottom:1px solid var(--line);padding:9px 8px;text-align:left;vertical-align:top;white-space:nowrap}.table tbody tr{cursor:pointer}.table tbody tr:hover{background:#f9fafb}.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.detail-grid div{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:11px;min-height:76px}.detail-grid strong{display:block;margin-bottom:5px;font-size:12px;text-transform:uppercase;color:var(--muted);letter-spacing:.03em}.summary{display:none}.summary.show{display:block}.fine{color:var(--muted);font-size:13px;line-height:1.4;margin-top:12px}@media(max-width:960px){.grid,.row,.row3,.detail-grid{grid-template-columns:1fr}header{padding:14px 16px}header img{width:46px;height:46px}header h1{font-size:22px}main{padding:16px 10px 36px}.card{padding:15px}.table th,.table td{font-size:13px}}
+    :root{--red:#b01c2e;--red-dark:#8f1423;--ink:#111827;--muted:#667085;--line:#d8dde6;--soft:#f5f7fa;--bg:#eef1f5;--good:#0b6b35;--warn:#805000;--bad:#a31621;--blue:#124a8c;--shadow:0 8px 24px rgba(17,24,39,.08)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg)}
+    .hidden{display:none!important}
+    header{background:linear-gradient(90deg,var(--red),var(--red-dark));color:#fff;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand img{width:54px;height:54px;object-fit:contain;background:#fff;border-radius:10px;padding:4px}
+    .brand h1{margin:0;font-size:25px;line-height:1}
+    .brand p{margin:4px 0 0;font-size:14px;opacity:.9}
+    .header-actions{display:flex;align-items:center;gap:8px}
+    .header-pill{border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:8px 12px;font-size:13px;background:rgba(255,255,255,.12)}
+    main{max-width:1460px;margin:0 auto;padding:18px 14px 42px}
+    .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+    h2{margin:0 0 10px;font-size:20px}
+    h3{margin:14px 0 8px;font-size:16px}
+    .helper{margin:0 0 12px;color:var(--muted);line-height:1.4;font-size:14px}
+    label{display:block;font-weight:700;margin:10px 0 5px;font-size:13px}
+    input,select,textarea{width:100%;border:1px solid #c9d0dc;border-radius:10px;padding:10px 11px;font:inherit;background:#fff}
+    textarea{min-height:82px;resize:vertical}
+    button{border:0;border-radius:999px;padding:10px 15px;background:var(--red);color:#fff;font-weight:700;cursor:pointer;min-height:40px}
+    button.secondary{background:#e5e7eb;color:#111827}
+    button.ghost{background:#fff;color:#111827;border:1px solid var(--line)}
+    button.good{background:var(--good)}
+    button.warn{background:#b7791f}
+    button.danger{background:var(--bad)}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .row3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}
+    .notice{border-radius:12px;padding:10px 12px;margin:10px 0 0;line-height:1.45;display:none}
+    .notice.show{display:block}
+    .notice.ok{background:#e7f7ed;color:var(--good);border:1px solid #b7e2c4}
+    .notice.warn{background:#fff4dc;color:var(--warn);border:1px solid #f3d28d}
+    .notice.bad{background:#fde8e8;color:#9b1c1c;border:1px solid #f3b4b4}
+    .login-shell{min-height:calc(100vh - 82px);display:grid;place-items:center;padding:24px}
+    .login-card{width:min(520px,100%)}
+    .login-card .brand-lock{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+    .login-card img{width:58px;height:58px;object-fit:contain}
+    .login-card h2{font-size:25px}
+    .login-meta{color:var(--muted);font-size:13px;margin-top:12px;line-height:1.45}
+    .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:0 0 14px}
+    .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:0 4px 14px rgba(17,24,39,.05)}
+    .kpi b{display:block;font-size:23px}
+    .kpi span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+    .layout{display:grid;grid-template-columns:minmax(620px,1.05fr) minmax(480px,.95fr);gap:14px;align-items:start}
+    .detail-panel{position:sticky;top:12px}
+    .status{display:inline-block;border-radius:999px;padding:4px 8px;background:#e5e7eb;font-size:12px;font-weight:700}
+    .status.quote_created{background:#eef2ff;color:#30358f}
+    .status.in_production{background:#fff4dc;color:#805000}
+    .status.ready{background:#e7f7ed;color:#0b6b35}
+    .status.completed{background:#e8f1ff;color:#124a8c}
+    .status.cancelled,.status.expired{background:#fde8e8;color:#9b1c1c}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff}
+    .results-wrap{max-height:440px}
+    .table{width:100%;border-collapse:collapse;font-size:13px}
+    .table th,.table td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top;white-space:nowrap}
+    .table tbody tr{cursor:pointer}
+    .table tbody tr:hover{background:#f9fafb}
+    .table tr.selected{background:#fff5f6;outline:2px solid rgba(176,28,46,.22)}
+    .pager{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;color:var(--muted);font-size:13px}
+    .detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .detail-card{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px;min-height:72px;font-size:14px;line-height:1.35}
+    .detail-card strong{display:block;margin-bottom:4px;font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.04em}
+    .workflow{border:1px solid var(--line);border-radius:12px;background:#fbfcfe;padding:12px;margin:12px 0}
+    .small-link{color:var(--blue);font-weight:700;text-decoration:none}
+    .small-link:hover{text-decoration:underline}
+    .empty{color:var(--muted);padding:15px;text-align:center}
+    .fine{color:var(--muted);font-size:12px;line-height:1.4;margin-top:12px}
+    .quick-load{border-top:1px solid var(--line);margin-top:13px;padding-top:12px}
+    .line-table{max-height:210px}
+    @media(max-width:1060px){.layout,.row,.row3,.detail-grid,.kpis{grid-template-columns:1fr}.detail-panel{position:static}.results-wrap{max-height:360px}header{align-items:flex-start;flex-direction:column}.header-actions{width:100%;justify-content:flex-start}.brand h1{font-size:22px}main{padding:12px 10px 36px}.card{padding:14px}.table{font-size:12px}}
   </style>
 </head>
 <body>
-  <header><img src="skye_ace_logo.png" alt="Skye ACE Hardware"><div><h1>Screen Admin Dashboard</h1><p>Quote lookup, staff status updates, and order control</p></div></header>
-  <main>
-    <div class="notice show ok"><strong>Dashboard V2:</strong> Search is connected. Search by customer, phone, email, quote ID, status, or store. Click a result row to load full quote details.</div>
+<header>
+  <div class="brand"><img src="skye_ace_logo.png" alt="Skye ACE Hardware"><div><h1>Screen Admin Portal</h1><p>Quote lookup, staff status updates, and order control</p></div></div>
+  <div id="headerActions" class="header-actions hidden"><span class="header-pill">Signed in</span><button id="lockBtn" class="ghost" type="button">Lock</button><button id="signOutBtn" class="ghost" type="button">Sign Out</button></div>
+</header>
+
+<section id="loginView" class="login-shell">
+  <div class="card login-card">
+    <div class="brand-lock"><img src="skye_ace_logo.png" alt="Skye ACE Hardware"><div><h2>Staff Access</h2><p class="helper">Enter the staff access value to open the order dashboard.</p></div></div>
+    <label for="staffToken">Staff Access Value</label>
+    <input id="staffToken" type="password" autocomplete="off" placeholder="Paste access value">
+    <div class="actions"><button id="loginBtn" type="button">Open Dashboard</button><button id="clearLoginBtn" class="secondary" type="button">Clear</button></div>
+    <div id="loginNotice" class="notice"></div>
+    <p class="login-meta">This browser session keeps access until you lock or sign out. Staff actions are still checked by the backend before any quote/order data is returned.</p>
+  </div>
+</section>
+
+<main id="appView" class="hidden">
+  <div class="notice show ok"><strong>Dashboard V4:</strong> Staff portal is gated. Search, selected-order detail, and workflow actions are connected.</div>
+  <section class="kpis" aria-label="Loaded order status summary">
+    <div class="kpi"><b id="kpiCreated">0</b><span>Quote Created</span></div><div class="kpi"><b id="kpiProduction">0</b><span>In-Production</span></div><div class="kpi"><b id="kpiReady">0</b><span>Ready</span></div><div class="kpi"><b id="kpiCompleted">0</b><span>Completed</span></div><div class="kpi"><b id="kpiTotal">0</b><span>Loaded Results</span></div>
+  </section>
+  <div class="layout">
     <section class="card">
-      <h2>Access</h2>
-      <div class="row"><div><label for="staffToken">Staff Access Value</label><input id="staffToken" type="password" autocomplete="off" placeholder="Paste access value"></div><div><label>&nbsp;</label><div class="actions" style="margin-top:0"><button id="saveTokenBtn" class="secondary" type="button">Check</button><button id="clearTokenBtn" class="danger" type="button">Clear</button></div></div></div>
-      <div id="tokenNotice" class="notice"></div>
+      <h2>Find Quote / Order</h2>
+      <p class="helper">Search recent quotes/orders. Click a row to load details and workflow actions.</p>
+      <div class="row3"><div><label for="searchText">Customer / Phone / Email / Quote ID</label><input id="searchText" autocomplete="off" placeholder="Example: 7025219688, Nicholas, email, or quote ID"></div><div><label for="statusFilter">Status</label><select id="statusFilter"><option value="all">All</option><option value="quote_created">Quote Created</option><option value="in_production">In-Production</option><option value="ready">Ready</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="expired">Expired</option></select></div><div><label for="storeFilter">Store</label><select id="storeFilter"><option value="all">All Stores</option><option value="18228">Tropicana</option><option value="18507">Horizon Ridge</option><option value="18690">Rainbow</option><option value="19117">Green Valley</option></select></div></div>
+      <div class="actions"><button id="searchBtn" type="button">Search Dashboard</button><button id="recentBtn" type="button" class="secondary">Load Recent</button><button id="clearSearchBtn" type="button" class="secondary">Clear Search</button></div>
+      <div id="searchNotice" class="notice"></div>
+      <div class="table-wrap results-wrap"><table class="table"><thead><tr><th>Created</th><th>Customer</th><th>Phone</th><th>Store</th><th>Status</th><th>Total</th></tr></thead><tbody id="resultsBody"><tr><td colspan="6" class="empty">Search results will appear here.</td></tr></tbody></table></div>
+      <div class="pager"><span id="pageInfo">No results loaded.</span><span><button id="prevPageBtn" class="secondary" type="button">Previous</button> <button id="nextPageBtn" class="secondary" type="button">Next</button></span></div>
+      <div class="quick-load"><h3>Quick Load</h3><div class="row"><div><label for="quoteId">Quote ID</label><input id="quoteId" autocomplete="off" placeholder="Paste quote ID"></div><div><label for="viewToken">Quote View Token</label><input id="viewToken" autocomplete="off" placeholder="Token from quote.html?token=..."></div></div><div class="actions"><button id="manualSelectBtn" type="button" class="secondary">Load by Quote ID</button><button id="loadQuoteBtn" type="button" class="secondary">Load by View Token</button></div></div>
     </section>
-    <div class="grid" style="margin-top:16px">
-      <section class="card">
-        <h2>Find Quote / Order</h2>
-        <p class="helper">Search recent quotes/orders, then click a row to load the full order detail and status controls.</p>
-        <div class="row3"><div><label for="searchText">Customer / Phone / Email / Quote ID</label><input id="searchText" autocomplete="off" placeholder="Example: 7025219688, Nicholas, email, or quote ID"></div><div><label for="statusFilter">Status</label><select id="statusFilter"><option value="all">All</option><option value="quote_created">Quote Created</option><option value="in_production">In-Production</option><option value="ready">Ready</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="expired">Expired</option></select></div><div><label for="storeFilter">Store</label><select id="storeFilter"><option value="all">All Stores</option><option value="18228">Tropicana</option><option value="18507">Horizon Ridge</option><option value="18690">Rainbow</option><option value="19117">Green Valley</option></select></div></div>
-        <div class="actions"><button id="searchBtn" type="button" class="secondary">Search Dashboard</button><button id="clearSearchBtn" type="button" class="secondary">Clear Search</button></div>
-        <div id="searchNotice" class="notice"></div>
-        <h3>Quick Load</h3>
-        <div class="row"><div><label for="quoteId">Quote ID</label><input id="quoteId" autocomplete="off" placeholder="Paste quote ID"></div><div><label for="viewToken">Quote View Token</label><input id="viewToken" autocomplete="off" placeholder="Token from quote.html?token=..."></div></div>
-        <div class="actions"><button id="loadQuoteBtn" type="button">Load by View Token</button><button id="manualSelectBtn" type="button" class="secondary">Load by Quote ID</button></div>
-        <div class="table-wrap" style="margin-top:14px"><table class="table"><thead><tr><th>Created</th><th>Customer</th><th>Phone</th><th>Store</th><th>Status</th><th>Total</th></tr></thead><tbody id="resultsBody"><tr><td colspan="6">Search results will appear here.</td></tr></tbody></table></div>
-      </section>
-      <aside class="card">
-        <h2>Status Control</h2>
-        <p class="helper">Select or paste a Quote ID, then update the operational status.</p>
-        <label for="activeQuoteId">Active Quote ID</label><input id="activeQuoteId" autocomplete="off" placeholder="Loaded quote ID appears here">
-        <div class="row"><div><label for="statusSelect">New Status</label><select id="statusSelect"><option value="in_production">In-Production / Paid In Store</option><option value="ready">Ready</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="expired">Expired</option></select></div><div><label for="paymentMethod">Payment Source</label><select id="paymentMethod"><option value="in_store">In Store / POS Entered</option><option value="stripe">Stripe</option></select></div></div>
-        <label for="posReceiptNumber">POS Receipt / Transaction #</label><input id="posReceiptNumber" autocomplete="off" placeholder="Required when marking paid in store">
-        <label for="posNotes">Staff Notes</label><textarea id="posNotes" placeholder="Optional notes, customer timing details, cancellation reason, etc."></textarea>
-        <div class="actions"><button id="updateStatusBtn" type="button">Update Status</button><button id="clearFormBtn" class="secondary" type="button">Clear Detail</button></div>
-        <div id="resultNotice" class="notice" role="status"></div>
-      </aside>
-    </div>
-    <section id="quotePreview" class="card summary" aria-live="polite" style="margin-top:16px"></section>
-    <p class="fine">Flow: Quote Created → In-Production → Ready → Completed. Cancelled and Expired should be rare and intentional.</p>
-  </main>
+
+    <aside class="card detail-panel">
+      <h2>Selected Order</h2>
+      <div id="selectedNotice" class="notice show warn">No quote selected. Search and click a result row.</div>
+      <div id="quotePreview"></div>
+      <div class="workflow"><strong id="workflowTitle">Workflow Actions</strong><p class="helper" id="workflowHelp">Actions activate after a quote is selected.</p><div class="actions"><button id="markPaidBtn" class="warn" type="button">Mark Paid / In-Production</button><button id="markReadyBtn" class="good" type="button">Mark Ready</button><button id="markCompletedBtn" class="good" type="button">Mark Completed</button><button id="cancelBtn" class="danger" type="button">Cancel</button></div></div>
+      <h3>Status Control</h3>
+      <label for="activeQuoteId">Active Quote ID</label><input id="activeQuoteId" autocomplete="off" placeholder="Loaded quote ID appears here">
+      <div class="row"><div><label for="statusSelect">New Status</label><select id="statusSelect"><option value="in_production">In-Production / Paid In Store</option><option value="ready">Ready</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option><option value="expired">Expired</option></select></div><div><label for="paymentMethod">Payment Source</label><select id="paymentMethod"><option value="in_store">In Store / POS Entered</option><option value="stripe">Stripe</option></select></div></div>
+      <label for="posReceiptNumber">POS Receipt / Transaction #</label><input id="posReceiptNumber" autocomplete="off" placeholder="Required when marking paid in store">
+      <label for="posNotes">Staff Notes</label><textarea id="posNotes" placeholder="Optional notes, customer timing details, cancellation reason, etc."></textarea>
+      <div class="actions"><button id="updateStatusBtn" type="button">Update Status</button><button id="clearFormBtn" class="secondary" type="button">Clear Detail</button></div>
+      <div id="resultNotice" class="notice" role="status"></div>
+    </aside>
+  </div>
+  <p class="fine">Flow: Quote Created → In-Production → Ready → Completed. Cancelled and Expired should be rare and intentional.</p>
+</main>
+
 <script>
 const api='https://screen-ordering-api.nnelson.workers.dev';
+const sessionKey='screen_admin_staff_access';
+const pageSize=18;
+let allRows=[],currentPage=1,selectedQuote=null,selectedId='';
 const q=id=>document.getElementById(id);
-const f={access:q('staffToken'),save:q('saveTokenBtn'),clearAccess:q('clearTokenBtn'),accessNotice:q('tokenNotice'),search:q('searchText'),statusFilter:q('statusFilter'),storeFilter:q('storeFilter'),searchBtn:q('searchBtn'),clearSearch:q('clearSearchBtn'),searchNotice:q('searchNotice'),results:q('resultsBody'),quote:q('quoteId'),active:q('activeQuoteId'),view:q('viewToken'),load:q('loadQuoteBtn'),manual:q('manualSelectBtn'),status:q('statusSelect'),method:q('paymentMethod'),receipt:q('posReceiptNumber'),notes:q('posNotes'),update:q('updateStatusBtn'),clear:q('clearFormBtn'),result:q('resultNotice'),preview:q('quotePreview')};
-f.save.onclick=()=>show(f.accessNotice,'ok','Access value present for this page.');
-f.clearAccess.onclick=()=>{f.access.value='';show(f.accessNotice,'warn','Access value cleared.')};
+const f={loginView:q('loginView'),appView:q('appView'),headerActions:q('headerActions'),staffToken:q('staffToken'),loginBtn:q('loginBtn'),clearLogin:q('clearLoginBtn'),loginNotice:q('loginNotice'),lockBtn:q('lockBtn'),signOutBtn:q('signOutBtn'),search:q('searchText'),statusFilter:q('statusFilter'),storeFilter:q('storeFilter'),searchBtn:q('searchBtn'),recentBtn:q('recentBtn'),clearSearch:q('clearSearchBtn'),searchNotice:q('searchNotice'),results:q('resultsBody'),pageInfo:q('pageInfo'),prev:q('prevPageBtn'),next:q('nextPageBtn'),quote:q('quoteId'),active:q('activeQuoteId'),view:q('viewToken'),load:q('loadQuoteBtn'),manual:q('manualSelectBtn'),status:q('statusSelect'),method:q('paymentMethod'),receipt:q('posReceiptNumber'),notes:q('posNotes'),update:q('updateStatusBtn'),clear:q('clearFormBtn'),result:q('resultNotice'),preview:q('quotePreview'),selectedNotice:q('selectedNotice'),workflowTitle:q('workflowTitle'),workflowHelp:q('workflowHelp'),markPaid:q('markPaidBtn'),markReady:q('markReadyBtn'),markCompleted:q('markCompletedBtn'),cancel:q('cancelBtn')};
+function getAccess(){return sessionStorage.getItem(sessionKey)||''}
+function setAccess(v){sessionStorage.setItem(sessionKey,v)}
+function clearAccess(){sessionStorage.removeItem(sessionKey)}
+function authHeaders(){const access=getAccess();if(!access)return null;const h={'Content-Type':'application/json'};h['Author'+'ization']='Bear'+'er '+access;return h}
+function showLogin(){f.loginView.classList.remove('hidden');f.appView.classList.add('hidden');f.headerActions.classList.add('hidden')}
+function showApp(){f.loginView.classList.add('hidden');f.appView.classList.remove('hidden');f.headerActions.classList.remove('hidden')}
+async function validateAccess(access){const h={'Content-Type':'application/json'};h['Author'+'ization']='Bear'+'er '+access;const res=await fetch(api+'/api/quote/search',{method:'POST',headers:h,body:JSON.stringify({search:'',status:'all',store_id:'all',limit:1})});return res.ok}
+f.loginBtn.onclick=async()=>{const v=f.staffToken.value.trim();if(!v)return show(f.loginNotice,'bad','Enter the staff access value.');setBusyLogin(true);show(f.loginNotice,'warn','Checking access...');try{const ok=await validateAccess(v);if(!ok){clearAccess();return show(f.loginNotice,'bad','Access rejected. Check the staff access value.')}setAccess(v);f.staffToken.value='';showApp();await searchDashboard(true)}catch(e){show(f.loginNotice,'bad','Access check failed: '+String(e&&e.message?e.message:e))}finally{setBusyLogin(false)}};
+f.clearLogin.onclick=()=>{f.staffToken.value='';show(f.loginNotice,'warn','Entry cleared.')};
+f.lockBtn.onclick=()=>{showLogin()};
+f.signOutBtn.onclick=()=>{clearAccess();clearForm();clearSearch();showLogin()};
 f.status.onchange=sync;
-f.update.onclick=updateStatus;
+f.update.onclick=()=>updateStatus(f.status.value);
 f.clear.onclick=clearForm;
 f.load.onclick=loadQuote;
 f.manual.onclick=()=>loadAdminQuote(f.quote.value.trim());
-f.searchBtn.onclick=searchDashboard;
-f.search.addEventListener('keydown',e=>{if(e.key==='Enter')searchDashboard()});
-f.clearSearch.onclick=()=>{f.search.value='';f.statusFilter.value='all';f.storeFilter.value='all';f.results.innerHTML='<tr><td colspan="6">Search cleared.</td></tr>';show(f.searchNotice,'warn','Search cleared.')};
-sync();
+f.searchBtn.onclick=()=>searchDashboard(false);
+f.recentBtn.onclick=()=>searchDashboard(true);
+f.search.addEventListener('keydown',e=>{if(e.key==='Enter')searchDashboard(false)});
+f.clearSearch.onclick=clearSearch;
+f.prev.onclick=()=>{if(currentPage>1){currentPage--;renderResultsPage()}};
+f.next.onclick=()=>{const pages=Math.max(1,Math.ceil(allRows.length/pageSize));if(currentPage<pages){currentPage++;renderResultsPage()}};
+f.markPaid.onclick=()=>prepareAction('in_production');
+f.markReady.onclick=()=>quickUpdate('ready');
+f.markCompleted.onclick=()=>quickUpdate('completed');
+f.cancel.onclick=()=>quickUpdate('cancelled');
 function sync(){const paid=f.status.value==='in_production';f.method.disabled=!paid;f.receipt.disabled=!paid;if(!paid)f.receipt.value=''}
-function authHeaders(){const access=f.access.value.trim();if(!access)return null;const h={'Content-Type':'application/json'};h['Author'+'ization']='Bear'+'er '+access;return h;}
-async function searchDashboard(){const h=authHeaders();if(!h)return show(f.searchNotice,'bad','Enter the staff access value first.');busy(true);show(f.searchNotice,'warn','Searching...');try{const res=await fetch(api+'/api/quote/search',{method:'POST',headers:h,body:JSON.stringify({search:f.search.value.trim(),status:f.statusFilter.value,store_id:f.storeFilter.value,limit:150})});const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok)return show(f.searchNotice,'bad','Search failed: '+((data&&(data.error||data.message))||('HTTP '+res.status)));renderResults(data.quotes||[]);show(f.searchNotice,'ok','Search complete. '+(data.count||0)+' result(s). Click any row to load details.')}catch(e){show(f.searchNotice,'bad','Search failed: '+String(e&&e.message?e.message:e))}finally{busy(false)}}
-function renderResults(rows){if(!rows.length){f.results.innerHTML='<tr><td colspan="6">No matching quotes found.</td></tr>';return;}f.results.innerHTML=rows.map(r=>'<tr data-id="'+safe(r.id)+'"><td>'+shortDate(r.created_at)+'</td><td>'+safe(r.customer_name)+'</td><td>'+safe(r.customer_phone)+'</td><td>'+safe(r.store_name)+'</td><td><span class="status '+safe(r.status)+'">'+label(r.status)+'</span></td><td>'+money(r.total_cents)+'</td></tr>').join('');Array.from(f.results.querySelectorAll('tr[data-id]')).forEach(row=>{row.onclick=()=>loadAdminQuote(row.dataset.id)});}
-async function loadAdminQuote(id){const quoteId=(id||'').trim();if(!quoteId)return show(f.searchNotice,'bad','Enter or select a Quote ID first.');const h=authHeaders();if(!h)return show(f.searchNotice,'bad','Enter the staff access value first.');busy(true);show(f.searchNotice,'warn','Loading quote detail...');try{const res=await fetch(api+'/api/quote/admin-view',{method:'POST',headers:h,body:JSON.stringify({quote_id:quoteId})});const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok||!data.quote)return show(f.searchNotice,'bad','Quote detail failed: '+((data&&(data.error||data.message))||('HTTP '+res.status)));f.quote.value=data.quote.id||'';f.active.value=data.quote.id||'';render(data.quote,data.items||[]);show(f.searchNotice,'ok','Quote detail loaded.')}catch(e){show(f.searchNotice,'bad','Quote detail failed: '+String(e&&e.message?e.message:e))}finally{busy(false)}}
-async function updateStatus(){const h=authHeaders();const quote=f.active.value.trim(), status=f.status.value, receipt=f.receipt.value.trim();if(!h)return show(f.result,'bad','Enter the staff access value first.');if(!quote)return show(f.result,'bad','Enter the Active Quote ID first.');if(status==='in_production'&&f.method.value==='in_store'&&!receipt)return show(f.result,'bad','Enter the POS receipt / transaction number first.');const body={quote_id:quote,status:status,pos_notes:f.notes.value.trim()};if(status==='in_production'){body.payment_method=f.method.value;body.pos_receipt_number=receipt}busy(true);show(f.result,'warn','Updating status...');try{const res=await fetch(api+'/api/quote/status',{method:'POST',headers:h,body:JSON.stringify(body)});const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok)return show(f.result,'bad','Status update failed: '+((data&&(data.error||data.message))||('HTTP '+res.status)));show(f.result,'ok','Status updated to '+label(status)+'.');if(f.active.value)loadAdminQuote(f.active.value)}catch(e){show(f.result,'bad','Status update failed: '+String(e&&e.message?e.message:e))}finally{busy(false)}}
-async function loadQuote(){const token=f.view.value.trim();if(!token)return show(f.searchNotice,'bad','Paste a quote view token first.');busy(true);show(f.searchNotice,'warn','Loading quote...');try{const res=await fetch(api+'/api/quote/view/'+encodeURIComponent(token));const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok||!data.quote)return show(f.searchNotice,'bad','Quote load failed.');f.quote.value=data.quote.id||'';f.active.value=data.quote.id||'';render(data.quote,data.items||[]);show(f.searchNotice,'ok','Quote loaded. Quote ID copied into status control.')}catch(e){show(f.searchNotice,'bad','Quote load failed: '+String(e&&e.message?e.message:e))}finally{busy(false)}}
-function render(quote,items){const rows=items.map((it,i)=>'<tr><td>'+(i+1)+'</td><td>'+safe(it.type)+'</td><td>'+safe(it.qty)+'</td><td>'+safe(it.width_display)+'</td><td>'+safe(it.height_display)+'</td><td>'+safe(it.frame_type)+' / '+safe(it.frame_color)+'</td><td>'+safe(it.material_type)+' / '+safe(it.material_color)+'</td><td>'+money(it.line_total_cents)+'</td></tr>').join('');f.preview.classList.add('show');f.preview.innerHTML='<h2>Loaded Quote Detail</h2><div class="detail-grid"><div><strong>Customer</strong>'+safe(quote.customer_name)+'<br>'+safe(quote.customer_phone)+'<br>'+safe(quote.customer_email)+'</div><div><strong>Store</strong>'+safe(quote.store_name)+'<br>'+safe(quote.store_phone)+'<br>'+safe(quote.store_email)+'</div><div><strong>Status / Total</strong><span class="status '+safe(quote.status)+'">'+label(quote.status)+'</span><br><br>'+money(quote.total_cents)+'</div></div><div class="detail-grid" style="margin-top:10px"><div><strong>Fulfillment</strong>'+label(quote.fulfillment_method||'')+'<br>Delivery: '+money(quote.delivery_cents)+'</div><div><strong>Payment</strong>'+safe(quote.payment_method||'Not paid')+'<br>'+safe(quote.pos_receipt_number||'')+'</div><div><strong>Links</strong>'+(quote.payment_url?'<a href="'+safe(quote.payment_url)+'" target="_blank" rel="noopener">Payment Link</a><br>':'')+(quote.view_token?'<a href="/quote.html?token='+safe(quote.view_token)+'" target="_blank" rel="noopener">Customer Quote PDF</a>':'')+'</div></div><h3>Line Items</h3><div class="table-wrap"><table class="table"><thead><tr><th>#</th><th>Type</th><th>Qty</th><th>Width</th><th>Height</th><th>Frame</th><th>Material</th><th>Line</th></tr></thead><tbody>'+(rows||'<tr><td colspan="8">No items returned.</td></tr>')+'</tbody></table></div>'}
-function clearForm(){f.active.value='';f.quote.value='';f.status.value='in_production';f.method.value='in_store';f.receipt.value='';f.notes.value='';f.view.value='';f.preview.classList.remove('show');f.preview.innerHTML='';sync();show(f.result,'warn','Detail cleared.')}
-function busy(x){f.update.disabled=x;f.load.disabled=x;f.clear.disabled=x;f.searchBtn.disabled=x;f.manual.disabled=x}
-function show(t,type,msg){t.className='notice show '+type;t.textContent=msg}function label(v){return String(v||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}function money(v){return(Number(v||0)/100).toLocaleString('en-US',{style:'currency',currency:'USD'})}function shortDate(v){if(!v)return'';const d=new Date(v);if(Number.isNaN(d.getTime()))return safe(v);return d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}function safe(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
+function setBusyLogin(x){f.loginBtn.disabled=x;f.clearLogin.disabled=x}
+function busy(x){[f.update,f.load,f.clear,f.searchBtn,f.recentBtn,f.manual,f.prev,f.next,f.markPaid,f.markReady,f.markCompleted,f.cancel].forEach(btn=>{if(btn)btn.disabled=x});if(!x)setWorkflow(selectedQuote)}
+async function searchDashboard(isRecent){const h=authHeaders();if(!h){showLogin();return}busy(true);show(f.searchNotice,'warn',isRecent?'Loading recent quotes...':'Searching...');try{const res=await fetch(api+'/api/quote/search',{method:'POST',headers:h,body:JSON.stringify({search:isRecent?'':f.search.value.trim(),status:f.statusFilter.value,store_id:f.storeFilter.value,limit:150})});const data=await res.json().catch(()=>({}));if(res.status===401){clearAccess();showLogin();return show(f.loginNotice,'bad','Session expired or access rejected. Sign in again.')}if(!res.ok||!data.ok)return show(f.searchNotice,'bad','Search failed: '+((data&&(data.error||data.message))||('HTTP '+res.status)));allRows=data.quotes||[];currentPage=1;renderKpis(allRows);renderResultsPage();show(f.searchNotice,'ok',(isRecent?'Recent quotes loaded. ':'Search complete. ')+(data.count||0)+' result(s). Click a row to load details.')}catch(e){show(f.searchNotice,'bad','Search failed: '+String(e&&e.message?e.message:e))}finally{busy(false)}}
+function renderResultsPage(){if(!allRows.length){f.results.innerHTML='<tr><td colspan="6" class="empty">No matching quotes found.</td></tr>';f.pageInfo.textContent='No results.';f.prev.disabled=true;f.next.disabled=true;return}const pages=Math.max(1,Math.ceil(allRows.length/pageSize));if(currentPage>pages)currentPage=pages;const start=(currentPage-1)*pageSize,end=Math.min(start+pageSize,allRows.length);const rows=allRows.slice(start,end);f.results.innerHTML=rows.map(r=>'<tr data-id="'+safe(r.id)+'" class="'+(r.id===selectedId?'selected':'')+'"><td>'+shortDate(r.created_at)+'</td><td>'+safe(r.customer_name)+'</td><td>'+safe(r.customer_phone)+'</td><td>'+safe(r.store_name)+'</td><td><span class="status '+safe(r.status)+'">'+label(r.status)+'</span></td><td>'+money(r.total_cents)+'</td></tr>').join('');Array.from(f.results.querySelectorAll('tr[data-id]')).forEach(row=>{row.onclick=()=>loadAdminQuote(row.dataset.id)});f.pageInfo.textContent='Showing '+(start+1)+'-'+end+' of '+allRows.length+' results. Page '+currentPage+' of '+pages+'.';f.prev.disabled=currentPage<=1;f.next.disabled=currentPage>=pages}
+function renderKpis(rows){const count=s=>rows.filter(r=>r.status===s).length;q('kpiCreated').textContent=count('quote_created');q('kpiProduction').textContent=count('in_production');q('kpiReady').textContent=count('ready');q('kpiCompleted').textContent=count('completed');q('kpiTotal').textContent=rows.length}
+async function loadAdminQuote(id){const quoteId=(id||'').trim();if(!quoteId)return show(f.searchNotice,'bad','Enter or select a Quote ID first.');const h=authHeaders();if(!h){showLogin();return}busy(true);show(f.searchNotice,'warn','Loading quote detail...');try{const res=await fetch(api+'/api/quote/admin-view',{method:'POST',headers:h,body:JSON.stringify({quote_id:quoteId})});const data=await res.json().catch(()=>({}));if(res.status===401){clearAccess();showLogin();return show(f.loginNotice,'bad','Session expired or access rejected. Sign in again.')}if(!res.ok||!data.ok||!data.quote)return show(f.searchNotice,'bad','Quote detail failed: '+((data&&(data.error||data.message))||('HTTP '+res.status)));selectedQuote=data.quote;selectedId=data.quote.id||'';f.quote.value=selectedId;f.active.value=selectedId;renderQuoteDetail(data.quote,data.items||[]);renderResultsPage();setWorkflow(data.quote);show(f.searchNotice,'ok','Quote detail loaded.')}catch(e){show(f.searchNotice,'bad','Quote detail failed: '+String(e&&e.message?e.message:e))}finally{busy(false)}}
+function renderQuoteDetail(quote,items){const rows=items.map((it,i)=>'<tr><td>'+(i+1)+'</td><td>'+safe(it.type)+'</td><td>'+safe(it.qty)+'</td><td>'+safe(it.width_display)+'</td><td>'+safe(it.height_display)+'</td><td>'+safe(it.frame_type)+' / '+safe(it.frame_color)+'</td><td>'+safe(it.material_type)+' / '+safe(it.material_color)+'</td><td>'+money(it.line_total_cents)+'</td></tr>').join('');f.selectedNotice.className='notice';f.selectedNotice.textContent='';f.preview.innerHTML='<div class="detail-grid"><div class="detail-card"><strong>Customer</strong>'+safe(quote.customer_name)+'<br>'+safe(quote.customer_phone)+'<br>'+safe(quote.customer_email)+'</div><div class="detail-card"><strong>Status / Total</strong><span class="status '+safe(quote.status)+'">'+label(quote.status)+'</span><br><br>'+money(quote.total_cents)+'</div><div class="detail-card"><strong>Store</strong>'+safe(quote.store_name)+'<br>'+safe(quote.store_phone)+'<br>'+safe(quote.store_email)+'</div><div class="detail-card"><strong>Fulfillment</strong>'+label(quote.fulfillment_method||'')+'<br>Delivery: '+money(quote.delivery_cents)+'</div><div class="detail-card"><strong>Payment</strong>'+safe(quote.payment_method||'Not paid')+'<br>'+safe(quote.pos_receipt_number||'')+'</div><div class="detail-card"><strong>Links</strong>'+(quote.payment_url?'<a class="small-link" href="'+safe(quote.payment_url)+'" target="_blank" rel="noopener">Open Payment Link</a><br>':'')+(quote.view_token?'<a class="small-link" href="/quote.html?token='+safe(quote.view_token)+'" target="_blank" rel="noopener">Open Customer Quote PDF</a>':'')+'</div></div><h3>Line Items</h3><div class="table-wrap line-table"><table class="table"><thead><tr><th>#</th><th>Type</th><th>Qty</th><th>Width</th><th>Height</th><th>Frame</th><th>Material</th><th>Line</th></tr></thead><tbody>'+(rows||'<tr><td colspan="8" class="empty">No items returned.</td></tr>')+'</tbody></table></div>'}
+function setWorkflow(quote){const s=quote&&quote.status;f.markPaid.disabled=!quote||s!=='quote_created';f.markReady.disabled=!quote||s!=='in_production';f.markCompleted.disabled=!quote||s!=='ready';f.cancel.disabled=!quote||['completed','cancelled','expired'].includes(s);if(!quote){f.workflowTitle.textContent='Workflow Actions';f.workflowHelp.textContent='Actions activate after a quote is selected.'}else if(s==='quote_created'){f.workflowTitle.textContent='Next Step: Collect Payment';f.workflowHelp.textContent='Use Mark Paid only after in-store POS payment is completed. POS receipt is required.'}else if(s==='in_production'){f.workflowTitle.textContent='Next Step: Mark Ready';f.workflowHelp.textContent='Use when the completed order is received from the vendor.'}else if(s==='ready'){f.workflowTitle.textContent='Next Step: Complete Order';f.workflowHelp.textContent='Use when the order has been transferred to the customer.'}else if(s==='completed'){f.workflowTitle.textContent='Order Complete';f.workflowHelp.textContent='This order is closed. Avoid changes unless correcting an admin error.'}else{f.workflowTitle.textContent='Order Not Active';f.workflowHelp.textContent='This quote/order is cancelled or expired.'}}
+function prepareAction(status){f.status.value=status;sync();if(status==='in_production'){f.receipt.focus();show(f.result,'warn','Enter the POS receipt / transaction number, then click Update Status.')}}
+async function quickUpdate(status){f.status.value=status;sync();await updateStatus(status)}
+async function updateStatus(statusOverride){const h=authHeaders();const quote=f.active.value.trim(),status=statusOverride||f.status.value,receipt=f.receipt.value.trim();if(!h){showLogin();return}if(!quote)return show(f.result,'bad','Enter the Active Quote ID first.');if(status==='in_production'&&f.method.value==='in_store'&&!receipt)return show(f.result,'bad','Enter the POS receipt / transaction number first.');const body={quote_id:quote,status:status,pos_notes:f.notes.value.trim()};if(status==='in_production'){body.payment_method=f.method.value;body.pos_receipt_number=receipt}busy(true);show(f.result,'warn','Updating status...');try{const res=await fetch(api+'/api/quote/status',{method:'POST',headers:h,body:JSON.stringify(body)});const data=await res.json().catch(()=>({}));if(res.status===401){clearAccess();showLogin();return show(f.loginNotice,'bad','Session expired or access rejected. Sign in again.')}if(!res.ok||!data.ok)return show(f.result,'bad','Status update failed: '+((data&&(data.error||data.message))||('HTTP '+res.status)));show(f.result,'ok','Status updated to '+label(status)+'.');await loadAdminQuote(f.active.value);await searchDashboard(true)}catch(e){show(f.result,'bad','Status update failed: '+String(e&&e.message?e.message:e))}finally{busy(false)}}
+async function loadQuote(){const token=f.view.value.trim();if(!token)return show(f.searchNotice,'bad','Paste a quote view token first.');busy(true);show(f.searchNotice,'warn','Loading quote...');try{const res=await fetch(api+'/api/quote/view/'+encodeURIComponent(token));const data=await res.json().catch(()=>({}));if(!res.ok||!data.ok||!data.quote)return show(f.searchNotice,'bad','Quote load failed.');selectedQuote=data.quote;selectedId=data.quote.id||'';f.quote.value=selectedId;f.active.value=selectedId;renderQuoteDetail(data.quote,data.items||[]);setWorkflow(data.quote);show(f.searchNotice,'ok','Quote loaded. Quote ID copied into status control.')}catch(e){show(f.searchNotice,'bad','Quote load failed: '+String(e&&e.message?e.message:e))}finally{busy(false)}}
+function clearForm(){selectedQuote=null;selectedId='';f.active.value='';f.quote.value='';f.status.value='in_production';f.method.value='in_store';f.receipt.value='';f.notes.value='';f.view.value='';f.preview.innerHTML='';f.selectedNotice.className='notice show warn';f.selectedNotice.textContent='No quote selected. Search and click a result row.';sync();setWorkflow(null);renderResultsPage();show(f.result,'warn','Detail cleared.')}
+function clearSearch(){f.search.value='';f.statusFilter.value='all';f.storeFilter.value='all';allRows=[];currentPage=1;renderKpis([]);f.results.innerHTML='<tr><td colspan="6" class="empty">Search cleared.</td></tr>';f.pageInfo.textContent='No results loaded.';show(f.searchNotice,'warn','Search cleared.')}
+function show(t,type,msg){t.className='notice show '+type;t.textContent=msg}
+function label(v){return String(v||'').replace(/_/g,' ').replace(/\w/g,c=>c.toUpperCase())}
+function money(v){return(Number(v||0)/100).toLocaleString('en-US',{style:'currency',currency:'USD'})}
+function shortDate(v){if(!v)return'';const d=new Date(v);if(Number.isNaN(d.getTime()))return safe(v);return d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}
+function safe(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
+(function init(){sync();setWorkflow(null);renderKpis([]);if(getAccess()){showApp();searchDashboard(true)}else{showLogin();setTimeout(()=>f.staffToken.focus(),50)}})();
 </script>
 </body>
 </html>
