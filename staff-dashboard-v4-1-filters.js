@@ -1,4 +1,4 @@
-// Staff Dashboard V4.1 active/store defaults, sortable results, and top-admin access controls.
+// Staff Dashboard V4.2 active/store defaults, sortable results, and top-admin access controls.
 (function(){
   const inactiveStatuses=['cancelled','expired'];
   const storeMap={
@@ -9,6 +9,7 @@
   };
   let sortKey='created_at';
   let sortDir='desc';
+  let accessRowsCache=[];
 
   function isActiveStatus(status){return !inactiveStatuses.includes(String(status||'').toLowerCase());}
   function isCreatedLikeStatus(status){return ['quote_created','submitted'].includes(String(status||'').toLowerCase());}
@@ -78,7 +79,7 @@
     if(document.getElementById('staffV42Styles')) return;
     const style=document.createElement('style');
     style.id='staffV42Styles';
-    style.textContent='.sortable{background:transparent;border:0;color:#111827;font:inherit;font-weight:700;padding:0;min-height:0;border-radius:0;cursor:pointer;text-align:left}.sortable:after{content:" ↕";color:#667085;font-weight:400}.sortable.active.asc:after{content:" ↑";color:#b01c2e;font-weight:700}.sortable.active.desc:after{content:" ↓";color:#b01c2e;font-weight:700}.status.submitted{background:#eef2ff;color:#30358f}.access-manager{margin-bottom:14px}.access-manager .access-grid{display:grid;grid-template-columns:1.2fr .8fr .8fr 1.2fr auto;gap:10px;align-items:end}.access-manager .access-table input{min-width:180px}.access-manager .access-table td,.access-manager .access-table th{white-space:nowrap}.access-badge{display:inline-block;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:700}.access-badge.active{background:#e7f7ed;color:#0b6b35}.access-badge.inactive{background:#fde8e8;color:#9b1c1c}@media(max-width:1060px){.access-manager .access-grid{grid-template-columns:1fr}.access-manager .access-table input{min-width:140px}}';
+    style.textContent='.sortable{background:transparent;border:0;color:#111827;font:inherit;font-weight:700;padding:0;min-height:0;border-radius:0;cursor:pointer;text-align:left}.sortable:after{content:" ↕";color:#667085;font-weight:400}.sortable.active.asc:after{content:" ↑";color:#b01c2e;font-weight:700}.sortable.active.desc:after{content:" ↓";color:#b01c2e;font-weight:700}.status.submitted{background:#eef2ff;color:#30358f}.access-manager{margin-bottom:14px}.access-manager .access-grid{display:grid;grid-template-columns:1.2fr .8fr .8fr 1.2fr auto;gap:10px;align-items:end}.access-manager .access-table input{min-width:180px}.access-manager .access-table td,.access-manager .access-table th{white-space:nowrap}.access-badge{display:inline-block;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:700}.access-badge.active{background:#e7f7ed;color:#0b6b35}.access-badge.inactive{background:#fde8e8;color:#9b1c1c}.access-warning{background:#fff4dc;border:1px solid #f3d28d;color:#805000;border-radius:12px;padding:10px 12px;margin-top:10px}.access-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:12px}.access-toolbar label{margin:0;font-weight:700}.access-toolbar input{width:auto}@media(max-width:1060px){.access-manager .access-grid{grid-template-columns:1fr}.access-manager .access-table input{min-width:140px}}';
     document.head.appendChild(style);
   }
 
@@ -127,13 +128,14 @@
       card=document.createElement('section');
       card.id='accessManagerCard';
       card.className='card access-manager';
-      card.innerHTML='<h2>Access Management</h2><p class="helper">Top Admin only. Create, rotate, deactivate, and reactivate shared store access values. Actual values are never shown after save.</p><div class="access-grid"><div><label for="accessLabel">Access Label</label><input id="accessLabel" placeholder="Example: Tropicana Store Access"></div><div><label for="accessRole">Role</label><select id="accessRole"><option value="store">Store Access</option><option value="top_admin">Top Admin</option></select></div><div><label for="accessStore">Store</label><select id="accessStore"><option value="">No store / Admin</option><option value="18228">Tropicana</option><option value="18507">Horizon Ridge</option><option value="18690">Rainbow</option><option value="19117">Green Valley</option></select></div><div><label for="accessValue">New Access Value</label><input id="accessValue" type="password" autocomplete="new-password" placeholder="Minimum 8 characters"></div><div><button id="createAccessBtn" type="button">Create Access</button></div></div><div class="actions"><button id="refreshAccessBtn" class="secondary" type="button">Refresh Access List</button></div><div id="accessNotice" class="notice"></div><div class="table-wrap" style="margin-top:12px"><table class="table access-table"><thead><tr><th>Status</th><th>Label</th><th>Store</th><th>Role</th><th>Last Used</th><th>Rotated</th><th>New Value</th><th>Actions</th></tr></thead><tbody id="accessRows"><tr><td colspan="8" class="empty">Access list not loaded.</td></tr></tbody></table></div>';
+      card.innerHTML='<h2>Access Management</h2><p class="helper">Top Admin only. Create, rotate, deactivate, and reactivate shared store access values. Actual values are never shown after save.</p><div class="access-warning"><strong>Important:</strong> Save new or rotated access values somewhere secure before closing this page. For security, the platform cannot show the value again after it is saved.</div><div class="access-grid"><div><label for="accessLabel">Access Label</label><input id="accessLabel" placeholder="Example: Tropicana Store Access"></div><div><label for="accessRole">Role</label><select id="accessRole"><option value="store">Store Access</option><option value="top_admin">Top Admin</option></select></div><div><label for="accessStore">Store</label><select id="accessStore"><option value="">No store / Admin</option><option value="18228">Tropicana</option><option value="18507">Horizon Ridge</option><option value="18690">Rainbow</option><option value="19117">Green Valley</option></select></div><div><label for="accessValue">New Access Value</label><input id="accessValue" type="password" autocomplete="new-password" placeholder="Minimum 8 characters"></div><div><button id="createAccessBtn" type="button">Create Access</button></div></div><div class="access-toolbar"><button id="refreshAccessBtn" class="secondary" type="button">Refresh Access List</button><label><input id="showInactiveAccess" type="checkbox"> Show inactive access values</label></div><div id="accessNotice" class="notice"></div><div class="table-wrap" style="margin-top:12px"><table class="table access-table"><thead><tr><th>Status</th><th>Label</th><th>Store</th><th>Role</th><th>Last Used</th><th>Rotated</th><th>New Value</th><th>Actions</th></tr></thead><tbody id="accessRows"><tr><td colspan="8" class="empty">Access list not loaded.</td></tr></tbody></table></div>';
       const kpis=document.querySelector('.kpis');
       kpis.parentNode.insertBefore(card,kpis.nextSibling);
       q('accessStore').onchange=syncCreateLabel;
       q('accessRole').onchange=syncCreateLabel;
       q('createAccessBtn').onclick=createAccessValue;
       q('refreshAccessBtn').onclick=loadAccessValues;
+      q('showInactiveAccess').onchange=renderAccessValues;
     }
     card.classList.remove('hidden');
     syncCreateLabel();
@@ -150,32 +152,41 @@
   }
 
   function accessShow(type,msg){show(q('accessNotice'),type,msg);}
+  function activeTopAdminCount(){return accessRowsCache.filter(r=>r.role==='top_admin'&&r.is_active).length;}
 
   async function loadAccessValues(){
     if(!isTopAdmin() || !q('accessRows')) return;
     q('accessRows').innerHTML='<tr><td colspan="8" class="empty">Loading access values...</td></tr>';
     try{
       const data=await endpoint('/api/staff/access/list',{});
-      const rows=data.access_keys||[];
-      if(!rows.length){
-        q('accessRows').innerHTML='<tr><td colspan="8" class="empty">No access values found.</td></tr>';
-        return;
-      }
-      q('accessRows').innerHTML=rows.map(row=>{
-        const active=row.is_active;
-        const status='<span class="access-badge '+(active?'active':'inactive')+'">'+(active?'Active':'Inactive')+'</span>';
-        const store=row.store_id?(safe(row.store_id)+' · '+safe(row.store_name||storeMap[row.store_id]||'')):'Admin';
-        const role=row.role==='top_admin'?'Top Admin':'Store';
-        return '<tr data-access-id="'+safe(row.id)+'"><td>'+status+'</td><td>'+safe(row.label)+'</td><td>'+store+'</td><td>'+role+'</td><td>'+shortDate(row.last_used_at)+'</td><td>'+shortDate(row.rotated_at)+'</td><td><input class="rotate-value" type="password" autocomplete="new-password" placeholder="New value"></td><td><button class="secondary rotate-btn" type="button">Rotate</button> <button class="'+(active?'danger':'good')+' active-btn" type="button">'+(active?'Deactivate':'Reactivate')+'</button></td></tr>';
-      }).join('');
-      Array.from(q('accessRows').querySelectorAll('tr[data-access-id]')).forEach(tr=>{
-        const id=tr.dataset.accessId;
-        tr.querySelector('.rotate-btn').onclick=()=>rotateAccessValue(id,tr.querySelector('.rotate-value'));
-        tr.querySelector('.active-btn').onclick=()=>toggleAccessValue(id,tr.querySelector('.active-btn').textContent==='Reactivate');
-      });
+      accessRowsCache=data.access_keys||[];
+      renderAccessValues();
     }catch(e){
       q('accessRows').innerHTML='<tr><td colspan="8" class="empty">Access list failed: '+safe(e.message||e)+'</td></tr>';
     }
+  }
+
+  function renderAccessValues(){
+    if(!q('accessRows')) return;
+    const showInactive=!!q('showInactiveAccess')?.checked;
+    const rows=showInactive?accessRowsCache:accessRowsCache.filter(row=>row.is_active);
+    if(!rows.length){
+      q('accessRows').innerHTML='<tr><td colspan="8" class="empty">No access values found for this view.</td></tr>';
+      return;
+    }
+    q('accessRows').innerHTML=rows.map(row=>{
+      const active=row.is_active;
+      const status='<span class="access-badge '+(active?'active':'inactive')+'">'+(active?'Active':'Inactive')+'</span>';
+      const store=row.store_id?(safe(row.store_id)+' · '+safe(row.store_name||storeMap[row.store_id]||'')):'Admin';
+      const role=row.role==='top_admin'?'Top Admin':'Store';
+      return '<tr data-access-id="'+safe(row.id)+'"><td>'+status+'</td><td>'+safe(row.label)+'</td><td>'+store+'</td><td>'+role+'</td><td>'+shortDate(row.last_used_at)+'</td><td>'+shortDate(row.rotated_at)+'</td><td><input class="rotate-value" type="password" autocomplete="new-password" placeholder="New value"></td><td><button class="secondary rotate-btn" type="button">Rotate</button> <button class="'+(active?'danger':'good')+' active-btn" type="button">'+(active?'Deactivate':'Reactivate')+'</button></td></tr>';
+    }).join('');
+    Array.from(q('accessRows').querySelectorAll('tr[data-access-id]')).forEach(tr=>{
+      const id=tr.dataset.accessId;
+      const row=accessRowsCache.find(r=>r.id===id);
+      tr.querySelector('.rotate-btn').onclick=()=>rotateAccessValue(id,tr.querySelector('.rotate-value'),row);
+      tr.querySelector('.active-btn').onclick=()=>toggleAccessValue(id,tr.querySelector('.active-btn').textContent==='Reactivate',row);
+    });
   }
 
   async function createAccessValue(){
@@ -185,6 +196,8 @@
     const accessValue=q('accessValue').value.trim();
     if(!label) return accessShow('bad','Enter an access label.');
     if(!accessValue || accessValue.length<8) return accessShow('bad','Access value must be at least 8 characters.');
+    const confirmText='Create new '+(role==='top_admin'?'Top Admin':'Store')+' access value for "'+label+'"? Save the value before closing this page; it cannot be viewed later.';
+    if(!confirm(confirmText)) return;
     try{
       await endpoint('/api/staff/access/create',{label,role,store_id:storeId,store_name:storeId?storeMap[storeId]||storeId:null,access_value:accessValue});
       q('accessValue').value='';
@@ -194,9 +207,12 @@
     }catch(e){accessShow('bad','Create failed: '+String(e.message||e));}
   }
 
-  async function rotateAccessValue(id,input){
+  async function rotateAccessValue(id,input,row){
     const value=(input&&input.value||'').trim();
     if(!value || value.length<8) return accessShow('bad','New access value must be at least 8 characters.');
+    const label=row&&row.label?row.label:id;
+    const message='Rotate access value for "'+label+'"? The old value will stop working and existing sessions for this access will be revoked.';
+    if(!confirm(message)) return;
     try{
       await endpoint('/api/staff/access/rotate',{id,access_value:value});
       input.value='';
@@ -205,7 +221,13 @@
     }catch(e){accessShow('bad','Rotate failed: '+String(e.message||e));}
   }
 
-  async function toggleAccessValue(id,active){
+  async function toggleAccessValue(id,active,row){
+    const label=row&&row.label?row.label:id;
+    if(!active && row&&row.role==='top_admin'&&row.is_active&&activeTopAdminCount()<=1){
+      return accessShow('bad','Cannot deactivate the last active Top Admin access value. Create another Top Admin access first.');
+    }
+    const message=active?'Reactivate access value for "'+label+'"?':'Deactivate access value for "'+label+'"? Existing sessions for this access will be revoked.';
+    if(!confirm(message)) return;
     try{
       await endpoint(active?'/api/staff/access/reactivate':'/api/staff/access/deactivate',{id});
       accessShow('ok',active?'Access reactivated.':'Access deactivated and existing sessions revoked.');
