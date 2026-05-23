@@ -518,17 +518,6 @@ async function requireStaff(request, env) {
     };
   }
 
-  if (env.STAFF_API_KEY && tokenValue === env.STAFF_API_KEY) {
-    return {
-      ok: true,
-      staff: {
-        role: 'top_admin',
-        label: 'Legacy STAFF_API_KEY',
-        legacy: true
-      }
-    };
-  }
-
   const missing = missingEnv(env, ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']);
   if (missing.length) {
     return {
