@@ -17,7 +17,7 @@
     table{border-collapse:collapse;width:100%}td,th{border:1.5px solid var(--line);padding:.04in .06in;font-size:12px;vertical-align:middle}.label{font-weight:700}.meta td{height:.31in}.branch{text-align:center;font-weight:700}.vegas{color:var(--red)}
     .cut{display:flex;gap:.55in;align-items:center;margin:.12in 0 .10in .75in;font-size:13px;font-weight:700}.box{display:inline-block;width:.24in;height:.24in;border:1.5px solid #111;margin-left:.08in;vertical-align:middle;position:relative}.box.checked:after{content:"✓";position:absolute;font-size:24px;line-height:.19in;left:.03in;top:-.02in}
     .side-label-row{display:grid;grid-template-columns:.72in 1fr;align-items:stretch;margin-top:.08in}.side-label{font-weight:700;font-size:13px;line-height:1.15;display:flex;align-items:center;justify-content:center;text-align:center}.choice th{height:.32in;font-size:12px;text-align:center;font-weight:700}.choice td{height:.32in;text-align:center;font-size:12px}.choice .fill{font-weight:700}
-    .line-area{display:grid;grid-template-columns:1fr 2.25in;margin-top:.10in}.lines th,.lines td{height:.385in;text-align:center}.lines th{background:var(--soft);font-size:12px}.lines .notes{text-align:left;font-size:11px;white-space:nowrap}.drawing-wrap{border:1.5px solid #111;border-left:0}.drawing-head{height:.385in;background:var(--soft);border-bottom:1.5px solid #111;text-align:center;font-weight:700;font-size:12px;line-height:.385in}.drawing-box{height:3.43in;display:flex;align-items:center;justify-content:center;color:#777;font-size:12px;text-align:center;padding:.2in}.spreader{height:.42in;border-top:1.5px solid #111;padding:.07in .08in;font-size:12px;font-weight:700}.spreader .box{margin:0 .18in 0 .05in}
+    .line-area{display:grid;grid-template-columns:1fr 2.25in;margin-top:.10in}.lines th,.lines td{height:.52in;text-align:center}.lines th{background:var(--soft);font-size:12px}.lines .notes{text-align:left;font-size:11px;white-space:nowrap}.drawing-wrap{border:1.5px solid #111;border-left:0}.drawing-head{height:.52in;background:var(--soft);border-bottom:1.5px solid #111;text-align:center;font-weight:700;font-size:12px;line-height:.52in}.drawing-box{height:4.50in;display:flex;align-items:center;justify-content:center;color:#777;font-size:12px;text-align:center;padding:.2in}.spreader-table{height:.70in;border-top:1.5px solid #111}.spreader-table td{border:0;font-size:12px;text-align:center;font-weight:700;padding:.02in .04in}.spreader-title{height:.27in}.spreader-option{height:.43in}.spreader-table .box{margin:0 0 0 .08in}
     .comments{margin-top:.08in;font-size:12px}.comment-line{display:inline-block;border-bottom:1px solid #111;width:6.25in;height:.16in;vertical-align:bottom}.print-note{width:8.5in;margin:0 auto 20px;color:#374151;font-size:13px}
     @media print{body{background:#fff}.page{box-shadow:none;margin:0;width:8.5in;min-height:11in}.print-note{display:none}}
   </style>
@@ -61,7 +61,10 @@
       <div class="drawing-wrap">
         <div class="drawing-head">DRAWING</div>
         <div class="drawing-box">Diagram rendering paused for next pass.<br>This space remains in the source-form location.</div>
-        <div class="spreader">SPREADER BAR SIZE:&nbsp;&nbsp; 3/4 HG <span class="box"></span> 5/16X3/4 <span class="box checked"></span></div>
+        <table class="spreader-table">
+          <tr><td class="spreader-title" colspan="2">SPREADER BAR SIZE:</td></tr>
+          <tr><td class="spreader-option">3/4 HG <span class="box"></span></td><td class="spreader-option">5/16X3/4 <span class="box checked"></span></td></tr>
+        </table>
       </div>
     </div>
     <div class="comments"><strong>SPECIAL INSTRUCTIONS:</strong> <span class="comment-line"></span></div>
