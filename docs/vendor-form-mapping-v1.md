@@ -27,7 +27,24 @@ Use Option A: rebuild clean generated HTML/PDF forms that visually match the cur
 
 Do not stamp onto the uploaded PDFs as the primary approach.
 
-The generated forms must preserve the vendor workflow layout and fit ten line items/diagrams per page.
+Critical design constraint: stay tight to the original vendor form copy and spatial structure. Do not redesign the form into a new internal layout. The generated version should feel like the original Screen Fab / PHX form with only targeted modifications needed for automation and density.
+
+Permitted layout modifications:
+
+- Replace frame-size/frame-color checkmarks with the compact color-under-size table.
+- Replace material/material-color checkmarks with the compact color-under-material table.
+- Use compact notes so the line table remains usable.
+- Use a numbered diagram grid only if it can remain visually subordinate to the original line-item area.
+
+Not permitted:
+
+- Moving major sections into a fundamentally different order.
+- Turning the form into a broad two-panel redesign.
+- Adding large new internal sections that do not exist on the source form.
+- Using large diagrams that dominate the page.
+- Adding arbitrary A/B/C/D/E/F drawing labels.
+
+The goal is: original vendor form look, automated fill behavior.
 
 ## Window screen form mapping
 
@@ -48,7 +65,7 @@ Header fields:
 
 The generated window form should not use separate checkmark rows for frame size/color or material/color.
 
-Instead, use two compact selection tables.
+Instead, use two compact selection tables while preserving the general position and visual weight of the original form's frame and fabric sections.
 
 #### Frame size / frame color table
 
@@ -57,6 +74,7 @@ Instead, use two compact selection tables.
 - Second row contains empty entry boxes.
 - The selected frame is shown by entering the frame color into the box below the selected frame size.
 - All non-selected frame-size boxes remain blank.
+- Keep this table in the same approximate area as the original frame size / frame color section.
 
 Example for white 5/16 x 3/4 frame:
 
@@ -70,6 +88,7 @@ Example for white 5/16 x 3/4 frame:
 - Second row contains empty entry boxes.
 - The selected material is shown by entering the material color into the box below the selected material.
 - All non-selected material boxes remain blank.
+- Keep this table in the same approximate area as the original fabric type section.
 
 Example for black fiberglass screen:
 
@@ -80,12 +99,14 @@ Example for black fiberglass screen:
 
 - Mark one of `MITRE CUT` or `STANDARD CUT` / `STRAIGHT CUT` depending on final label used in the generated form.
 - Customer-facing `Standard Cut` maps to the vendor form's standard/straight cut selection unless later corrected.
+- Keep cut type in the same approximate position as the original form.
 
 ### Spreader bar / crossbar
 
 - Horizontal crossbar is represented in the line-item note field with compact notation.
 - If frame-size-specific spreader bar size is required, mark the correct spreader bar size in the page-level spreader bar section.
 - For the 5/16 x 3/4 frame example, mark/select `5/16X3/4` spreader bar size.
+- Keep spreader bar selection in the same lower-form region as the original form unless final fit requires a minor shift.
 
 ### Window line-item fields
 
@@ -115,15 +136,22 @@ Do not use multi-line notes like:
 
 ### Window diagram field
 
-The drawing field should not be one skinny column with ten tiny stacked diagrams.
+The diagram section must remain tight to the original form layout. The original form has a drawing column/area tied to line items; the generated form should preserve that concept.
 
-Use a dedicated diagram block below or beside the ten line rows with:
+Preferred layout:
+
+- Keep the line-item table as the primary lower section.
+- Keep diagram space on the right/lower-right side, visually aligned with the line-item rows when possible.
+- If 10 individual row-height diagrams are too compressed, use a compact numbered grid.
+
+Compact numbered grid option:
 
 - 2 columns
 - 5 rows
 - 10 total compact diagrams per page
 - Each diagram numbered `1` through `10`
 - Diagram number corresponds to the matching line-item row number
+- The grid should not materially change the original form's overall hierarchy.
 
 Do not use arbitrary side letters such as A/B/C/D/E/F on the drawings unless those letters come from a specific vendor requirement. The generated diagrams should use the line number as the association key.
 
@@ -205,7 +233,8 @@ Line-item fields:
 
 Diagram rules:
 
-- Use the same 2-column x 5-row numbered diagram grid concept when diagrams are needed.
+- Preserve the original patio door form's drawing/comment structure as closely as possible.
+- Use the 2-column x 5-row numbered diagram grid only if needed for fit.
 - Diagram number corresponds to the patio door line number.
 - Do not use arbitrary A/B/C/D/E/F labels.
 
