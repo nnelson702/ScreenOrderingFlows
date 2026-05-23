@@ -93,11 +93,11 @@ Each page must support ten rows.
 
 Per line:
 
+- Line number
 - Qty
 - Width
 - Height
 - Compact hardware/crossbar notes
-- Compact drawing/diagram
 
 Hardware/crossbar notes must be short enough to fit one row.
 
@@ -115,14 +115,36 @@ Do not use multi-line notes like:
 
 ### Window diagram field
 
-- The drawing field must be compact.
-- The generated page must fit ten diagrams down the drawing column/edge.
-- Each line item gets its own small frame diagram.
-- Hardware should show by initials/marks at the appropriate side.
-- Crossbar should show as a simple horizontal or vertical line at approximate position.
-- Do not use a large single drawing that consumes the full right side of the page.
+The drawing field should not be one skinny column with ten tiny stacked diagrams.
 
-Example scenario:
+Use a dedicated diagram block below or beside the ten line rows with:
+
+- 2 columns
+- 5 rows
+- 10 total compact diagrams per page
+- Each diagram numbered `1` through `10`
+- Diagram number corresponds to the matching line-item row number
+
+Do not use arbitrary side letters such as A/B/C/D/E/F on the drawings unless those letters come from a specific vendor requirement. The generated diagrams should use the line number as the association key.
+
+Each diagram should show:
+
+- Screen frame outline
+- Hardware initials/marks at the correct side
+- Crossbar as a simple horizontal or vertical line at approximate position
+- Small line number label in the corner
+
+Example diagram label:
+
+- `#1`
+
+Example hardware marks:
+
+- `SLS` at top edge
+- `PT` at bottom edge
+- Horizontal crossbar line with small `18"` label if space allows
+
+### Example scenario
 
 - Frame size: `5/16 X 3/4`
 - Frame color: `WHITE`
@@ -139,6 +161,7 @@ Generated vendor notation:
 - Cut: standard/straight selected
 - Spreader bar: `5/16X3/4`
 - Line notes: `Top:SLS, Bott:PT, Hor:18"`
+- Diagram: numbered `#1`, not lettered, with SLS top, PT bottom, horizontal crossbar
 
 ## Window pagination/splitting rules
 
@@ -174,11 +197,17 @@ Option fields:
 
 Line-item fields:
 
+- Line number
 - Qty
 - Width
 - Height
 - Comments / compact notes
-- Compact drawing reference / diagram
+
+Diagram rules:
+
+- Use the same 2-column x 5-row numbered diagram grid concept when diagrams are needed.
+- Diagram number corresponds to the patio door line number.
+- Do not use arbitrary A/B/C/D/E/F labels.
 
 Pagination/splitting rules:
 
