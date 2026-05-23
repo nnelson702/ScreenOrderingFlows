@@ -26,8 +26,7 @@
     table{border-collapse:collapse;width:100%}td,th{border:1.5px solid var(--line);padding:.04in .06in;font-size:12px;vertical-align:middle}.label{font-weight:700}.meta td{height:.31in}.branch{text-align:center;font-weight:700}.vegas{color:var(--red)}
     .cut{display:flex;gap:.55in;align-items:center;margin:.12in 0 .10in .75in;font-size:13px;font-weight:700}.box{display:inline-block;width:.24in;height:.24in;border:1.5px solid #111;margin-left:.08in;vertical-align:middle;position:relative}.box.checked:after{content:"✓";position:absolute;font-size:24px;line-height:.19in;left:.03in;top:-.02in}
     .side-label-row{display:grid;grid-template-columns:.72in 1fr;align-items:stretch;margin-top:.08in}.side-label{font-weight:700;font-size:13px;line-height:1.15;display:flex;align-items:center;justify-content:center;text-align:center}.choice th{height:.32in;font-size:12px;text-align:center;font-weight:700}.choice td{height:.32in;text-align:center;font-size:12px}.choice .fill{font-weight:700}
-    .fabric-original{margin-top:.10in}.fabric-original th{background:var(--soft);font-size:12px;height:.32in}.fabric-original td{height:1.38in;text-align:center;vertical-align:top;font-size:12px;line-height:1.75;padding-top:.10in}.fabric-original .selected{text-align:left;padding-left:.08in}.fabric-original .selected:before{content:"✓ ";font-weight:700}
-    .material-compact{margin-top:.08in}.material-title{font-weight:700;font-size:13px;margin:.05in 0 .03in}.line-area{display:grid;grid-template-columns:1fr 2.25in;margin-top:.10in}.lines th,.lines td{height:.285in;text-align:center}.lines th{background:var(--soft);font-size:12px}.lines .notes{text-align:left;font-size:11px;white-space:nowrap}.drawing-wrap{border:1.5px solid #111;border-left:0}.drawing-head{height:.285in;background:var(--soft);border-bottom:1.5px solid #111;text-align:center;font-weight:700;font-size:12px;line-height:.285in}.drawing-box{height:2.85in;display:flex;align-items:center;justify-content:center;position:relative}.mini-screen{width:1.1in;height:1.85in;border:2px solid #111;position:relative}.mini-screen:before,.mini-screen:after{content:"SLS";position:absolute;top:-.18in;font-size:9px;font-weight:700}.mini-screen:before{left:.07in}.mini-screen:after{right:.07in}.crossbar{position:absolute;left:0;right:0;top:54%;border-top:2px solid #111}.pt{position:absolute;bottom:-.23in;font-size:9px;font-weight:700}.pt.left{left:.12in}.pt.right{right:.12in}.tab{position:absolute;bottom:-.14in;width:.08in;height:.17in;border:1.5px solid #111;border-top:0;border-radius:0 0 5px 5px}.tab.left{left:.18in}.tab.right{right:.18in}.spring{position:absolute;top:.04in;width:.06in;height:.2in;border-left:1.5px solid #111;border-right:1.5px solid #111}.spring.left{left:.05in}.spring.right{right:.05in}.num-list{position:absolute;right:.10in;top:.36in;font-size:11px;line-height:.25in;font-weight:700;text-align:center}.dim18{position:absolute;right:-.45in;top:50%;font-size:11px}.spreader{border-top:1.5px solid #111;padding:.07in .08in;font-size:12px;font-weight:700}.spreader .box{margin:0 .18in 0 .05in}
+    .line-area{display:grid;grid-template-columns:1fr 2.25in;margin-top:.10in}.lines th,.lines td{height:.285in;text-align:center}.lines th{background:var(--soft);font-size:12px}.lines .notes{text-align:left;font-size:11px;white-space:nowrap}.drawing-wrap{border:1.5px solid #111;border-left:0}.drawing-head{height:.285in;background:var(--soft);border-bottom:1.5px solid #111;text-align:center;font-weight:700;font-size:12px;line-height:.285in}.drawing-box{height:2.85in;padding:.05in}.diagram-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,1fr);width:100%;height:100%;border:1.5px solid #111;border-right:0;border-bottom:0}.diagram-cell{position:relative;border-right:1.5px solid #111;border-bottom:1.5px solid #111;display:flex;align-items:center;justify-content:center;overflow:hidden}.diagram-num{position:absolute;left:.04in;top:.03in;font-size:10px;font-weight:700}.mini-screen{width:.47in;height:.72in;border:1.5px solid #111;position:relative}.mini-screen:before,.mini-screen:after{content:"SLS";position:absolute;top:-.12in;font-size:6px;font-weight:700}.mini-screen:before{left:-.01in}.mini-screen:after{right:-.01in}.crossbar{position:absolute;left:0;right:0;top:54%;border-top:1.5px solid #111}.pt{position:absolute;bottom:-.14in;font-size:6px;font-weight:700}.pt.left{left:.04in}.pt.right{right:.04in}.tab{position:absolute;bottom:-.08in;width:.045in;height:.09in;border:1.2px solid #111;border-top:0;border-radius:0 0 4px 4px}.tab.left{left:.07in}.tab.right{right:.07in}.spring{position:absolute;top:.025in;width:.035in;height:.11in;border-left:1.1px solid #111;border-right:1.1px solid #111}.spring.left{left:.025in}.spring.right{right:.025in}.dim18{position:absolute;right:-.24in;top:47%;font-size:7px}.spreader{border-top:1.5px solid #111;padding:.07in .08in;font-size:12px;font-weight:700}.spreader .box{margin:0 .18in 0 .05in}
     .comments{margin-top:.08in;font-size:12px}.comment-line{display:inline-block;border-bottom:1px solid #111;width:6.25in;height:.16in;vertical-align:bottom}
     .print-note{width:8.5in;margin:0 auto 20px;color:#374151;font-size:13px}
     @media print{body{background:#fff}.page{box-shadow:none;margin:0;width:8.5in;min-height:11in}.print-note{display:none}}
@@ -59,19 +58,13 @@
       </table>
     </div>
 
-    <div class="side-label-row fabric-original">
-      <div class="side-label">FABRIC<br>TYPE</div>
-      <table>
+    <div class="side-label-row">
+      <div class="side-label">MATERIAL<br>TYPE / COLOR</div>
+      <table class="choice">
         <tr><th>FIBERGLASS</th><th>ALUMINUM</th><th>PET SCREEN</th><th>SOLAR 70</th><th>SUNTEX<br>80%</th><th>SUNTEX<br>90%</th><th>SUPER<br>SOLAR 90</th></tr>
-        <tr><td class="selected">CHARCOAL<br><br>GRAY<br><br>BRITE</td><td>CHARCOAL<br><br>BLACK</td><td>BLACK</td><td>CHARCOAL</td><td>BLACK<br>GRAY<br>BROWN<br>STUCCO<br>BEIGE<br>DARK BRONZE</td><td>BLACK<br>GRAY<br>BROWN<br>STUCCO<br>BEIGE<br>DARK BRONZE</td><td>CHARCOAL</td></tr>
+        <tr><td class="fill">BLACK</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
       </table>
     </div>
-
-    <div class="material-title">MATERIAL TYPE / COLOR</div>
-    <table class="choice material-compact">
-      <tr><th>FIBERGLASS</th><th>ALUMINUM</th><th>PET SCREEN</th><th>SOLAR 70</th><th>SUNTEX 80%</th><th>SUNTEX 90%</th><th>SUPER SOLAR 90</th></tr>
-      <tr><td class="fill">BLACK</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-    </table>
 
     <div class="line-area">
       <table class="lines">
@@ -83,8 +76,18 @@
       <div class="drawing-wrap">
         <div class="drawing-head">DRAWING</div>
         <div class="drawing-box">
-          <div class="mini-screen"><div class="spring left"></div><div class="spring right"></div><div class="crossbar"></div><div class="tab left"></div><div class="tab right"></div><span class="pt left">PT</span><span class="pt right">PT</span><span class="dim18">18&quot;</span></div>
-          <div class="num-list">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10</div>
+          <div class="diagram-grid">
+            <div class="diagram-cell"><div class="diagram-num">1</div><div class="mini-screen"><div class="spring left"></div><div class="spring right"></div><div class="crossbar"></div><div class="tab left"></div><div class="tab right"></div><span class="pt left">PT</span><span class="pt right">PT</span><span class="dim18">18&quot;</span></div></div>
+            <div class="diagram-cell"><div class="diagram-num">2</div></div>
+            <div class="diagram-cell"><div class="diagram-num">3</div></div>
+            <div class="diagram-cell"><div class="diagram-num">4</div></div>
+            <div class="diagram-cell"><div class="diagram-num">5</div></div>
+            <div class="diagram-cell"><div class="diagram-num">6</div></div>
+            <div class="diagram-cell"><div class="diagram-num">7</div></div>
+            <div class="diagram-cell"><div class="diagram-num">8</div></div>
+            <div class="diagram-cell"><div class="diagram-num">9</div></div>
+            <div class="diagram-cell"><div class="diagram-num">10</div></div>
+          </div>
         </div>
         <div class="spreader">SPREADER BAR SIZE:&nbsp;&nbsp; 3/4 HG <span class="box"></span> 5/16X3/4 <span class="box checked"></span></div>
       </div>
