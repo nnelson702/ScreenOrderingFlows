@@ -29,10 +29,14 @@ Do not stamp onto the uploaded PDFs as the primary approach.
 
 Critical design constraint: the generated vendor forms must remain tight to the original vendor copy and layout.
 
-The only intentional true layout/content modification currently approved is:
+The only intentional true layout/content modifications currently approved are:
 
-- Frame size + frame color selection method.
-- Material + material color selection method.
+- Window frame size + frame color selection method.
+- Window material + material color selection method.
+- Patio door type + color selection method.
+- Patio door material + material color selection method.
+- Patio door bottom section uses 6 detail rows aligned to A-F diagram cells.
+- Patio door handle measurement is shown as compact side notation in comments and as a double-ended measurement indicator in the diagram.
 
 Everything else should look exactly like the source vendor form unless the user explicitly approves a future change.
 
@@ -86,6 +90,8 @@ These are not approved as automatic redesign choices:
 ## Window screen form mapping
 
 Template title: `SCREEN ORDER FORM`
+
+Status: visual layout approved and ready to convert from preview into production generator.
 
 Header fields:
 
@@ -142,12 +148,15 @@ Do not use multi-line notes like:
 
 The diagram/drawing area should preserve the source form structure as closely as possible.
 
-Current direction:
+Current approved direction:
 
-- Keep the source form's drawing area location and size as the default.
-- Use numbered diagrams only as an association aid if multiple diagrams are needed.
-- Do not use arbitrary side letters such as A/B/C/D/E/F unless those letters are present in the source form or later required by the vendor.
-- If a 2-column x 5-row diagram grid is needed to fit ten diagrams, it must be placed inside the original drawing area/footprint as closely as possible and must not change the overall form layout.
+- Keep the source form's drawing area location and size.
+- Use a 2-column x 5-row diagram grid to fit ten diagrams.
+- Number diagrams 1-10 to associate with detail rows.
+- Blank line rows should have blank same-size diagram boxes.
+- Hardware badges should be small, inside the frame, and touching the relevant inside perimeter.
+- Hardware badges should be distributed evenly along the selected side.
+- Crossbar line should be shown where applicable.
 
 Each diagram should show:
 
@@ -194,6 +203,8 @@ Generated vendor notation:
 
 Template title: `PATIO DOOR ORDER FORM`
 
+Status: visual layout approved and locked from `patio-preview-v1.html` after user review.
+
 Header fields:
 
 - Dealer: Skye ACE Hardware / selected store name
@@ -207,36 +218,95 @@ Header fields:
 
 Header field placement and labels should match the source vendor form.
 
-Option fields:
+### Patio door type / color
 
-- Door type: source form's door type area
-- Rollers: source form's roller area; default steel when applicable
-- Handle placement: source form's handle placement area
-- Other: source form's other/comment field
-- Fabric/material type and color: use the same approved color-under-material table logic only if it is needed and fits the source form without changing the form structure
+Use the same color-under-type logic approved for window frame selection.
 
-Line-item fields:
+- Door type table has three frame type columns: `ROLLFORMED STEEL`, `STANDARD ALUMINUM`, `SUPREME ALUMINUM`.
+- Top row contains the door type labels.
+- Second row contains blank entry boxes.
+- Selected door color is entered under the selected door type.
+- All non-selected door type boxes remain blank.
+
+Example:
+
+- Column header: `STANDARD ALUMINUM`
+- Box below: `WHITE`
+
+### Patio material / color
+
+Use the same color-under-material logic approved for window screens.
+
+- Top row contains material labels.
+- Second row contains blank entry boxes.
+- Selected material color is entered under the selected material.
+- All non-selected material boxes remain blank.
+
+Example:
+
+- Column header: `FIBERGLASS`
+- Box below: `BLACK`
+
+### Rollers / handle placement / other
+
+- Rollers section remains its own source-form-style selection area.
+- Default rollers are `STEEL` unless stored order data specifies nylon.
+- Handle placement remains its own source-form-style selection area.
+- `XO / LEFT` means left handle placement.
+- `OX / RIGHT` means right handle placement.
+- `KD DOOR` and `TOP HUNG` live under the `OTHER` section for visual continuity, but current system data collection does not select them.
+
+### Patio door line-item fields
+
+Use six detail rows only because the patio source form has six drawing cells A-F.
+
+Per line:
 
 - Qty
-- Width
 - Height
-- Comments / compact notes using the source form field structure
-- Drawing reference / diagram using the source form field structure
+- Width
+- Comments
 
-Diagram rules:
+Compact comments format:
 
-- Preserve the original patio door form's drawing/comment structure as closely as possible.
-- Do not convert to a numbered grid unless the source form cannot support the required item count and the user approves the mockup.
-- Do not use arbitrary A/B/C/D/E/F labels.
+- `Steel rollers, Right: 40"`
+- `Nylon rollers, Left: 38"`
 
-Pagination/splitting rules:
+Do not use long prose such as:
+
+- `Latch:40" from bottom`
+- `Handle is on right side measured from bottom`
+
+### Patio door diagram field
+
+Use six drawing cells only: A-F.
+
+- Cell A corresponds to row 1.
+- Cell B corresponds to row 2.
+- Cell C corresponds to row 3.
+- Cell D corresponds to row 4.
+- Cell E corresponds to row 5.
+- Cell F corresponds to row 6.
+- Unused cells show blank same-size door outlines.
+- Used cells show a door frame outline, handle/latch marker, roller markers, and measurement indicator where applicable.
+
+Handle/latch height measurement:
+
+- Measurement is collected from the bottom of the door frame to the middle of the handle/latch.
+- Show a vertical measurement line inside the diagram.
+- Top arrow should point to handle/latch midpoint.
+- Bottom arrow should point to the bottom of the frame, not to the roller.
+- Measurement label should be compact, e.g. `40"`.
+
+## Patio door pagination/splitting rules
 
 - Patio door forms are separate from window screen forms.
 - Group only compatible items on the same form page.
-- Start a new patio door page when door type, material/fabric type/color, rollers, or handle placement changes.
+- Start a new patio door page when door type, door color, material/fabric type, material color, rollers, or handle placement changes.
 - Handle orientation is a pagination trigger.
 - Flatten identical line items into one row with quantity.
-- Leave unused rows blank.
+- Leave unused rows and diagram cells blank.
+- Use a maximum of six line rows per patio door page.
 
 ## Staff portal flow
 
@@ -248,8 +318,8 @@ Pagination/splitting rules:
 
 ## Outstanding implementation details
 
-- Build browser-printable HTML forms first.
+- Convert approved patio preview into reusable generator.
+- Build browser-printable unified vendor form package first.
 - Validate visual layout against the source form, not against redesigned mockups.
 - Add staff header-edit fields before final generation.
-- Add diagram rendering for hardware initials and spreader/crossbar placement.
 - Convert print HTML to PDF/download behavior after source-form-faithful layout is approved.
