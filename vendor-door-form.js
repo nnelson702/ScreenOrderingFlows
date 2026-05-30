@@ -7,10 +7,31 @@
 
   function safe(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;')}
   function norm(v){return String(v??'').toLowerCase().replace(/&quot;/g,'').replace(/["']/g,'').replace(/[_\-]+/g,' ').replace(/\s+/g,' ').trim()}
+  function statusKey(v){return String(v??'').toLowerCase().replace(/[\-\s]+/g,'_').trim()}
+  function isOperationalStatus(v){return SAFE_STATUSES.includes(statusKey(v))}
   function compact(v){return norm(v).replace(/\s+/g,'')}
   function upper(v){return String(v??'').trim().toUpperCase()}
   function displayDate(d){const date=d?new Date(d):new Date(); if(Number.isNaN(date.getTime()))return new Date().toLocaleDateString('en-US'); return date.toLocaleDateString('en-US')}
   function chunk(arr,size){const out=[];for(let i=0;i<arr.length;i+=size)out.push(arr.slice(i,i+size));return out}
+
+  function injectPrintFit(){
+    if(typeof document==='undefined'||document.getElementById('vendorPrintFit'))return;
+    const style=document.createElement('style');
+    style.id='vendorPrintFit';
+    style.textContent='@page{size:letter portrait;margin:0}@media print{html,body{width:8.5in;margin:0!important;background:#fff!important}.toolbar{display:none!important}.page{width:8.5in!important;height:10.78in!important;min-height:0!important;overflow:hidden!important;margin:0!important;padding:.16in .23in!important;box-shadow:none!important;break-after:page!important;page-break-after:always!important}.page:last-child{break-after:auto!important;page-break-after:auto!important}.top{margin-bottom:.03in!important}h1{font-size:21px!important;margin:0 0 .03in!important}.meta td{height:.27in!important}.cut{margin:.055in 0 .045in .75in!important}.side-label-row,.patio-row{margin-top:.04in!important}.choice th,.choice td{height:.275in!important}.line-area{margin-top:.05in!important}.lines th,.lines td{height:.44in!important}.drawing-head{height:.44in!important;line-height:.44in!important}.drawing-box{height:3.78in!important}.spreader-table{height:.50in!important}.spreader-title{height:.18in!important}.spreader-option{height:.32in!important}.comments,.patio-special{margin-top:.025in!important;font-size:11px!important}.patio-controls{margin-top:.04in!important}.patio-control{min-height:.43in!important;padding:.03in .055in!important}.patio-control-line{margin-top:.02in!important}.patio-bottom{margin-top:.05in!important}.patio-lines th{height:.38in!important}.patio-lines td{height:.70in!important}.patio-drawing-head{height:.38in!important;line-height:.38in!important}.patio-drawing-box{height:4.20in!important}.patio-door-frame{width:.60in!important;height:.92in!important}.sf{font-size:32px!important}.addr,.contact{font-size:11px!important}}';
+    document.head.appendChild(style);
+  }
+
+  injectPrintFit();
+
+  if(window.VendorWindowForms&&typeof window.VendorWindowForms.render==='function'&&!window.VendorWindowForms.__statusPatched){
+    const originalRender=window.VendorWindowForms.render;
+    window.VendorWindowForms.render=function(quote,items){
+      const q=isOperationalStatus(quote&&quote.status)?{...quote,status:'completed'}:quote;
+      return originalRender(q,items);
+    };
+    window.VendorWindowForms.__statusPatched=true;
+  }
 
   function matchOption(value,options){
     const c=compact(value);
@@ -141,7 +162,7 @@
 
   function renderVendorDoorForms(quote,items){
     quote=quote||{};items=items||[];
-    if(!SAFE_STATUSES.includes(norm(quote.status))){return '<main class="shell"><div class="notice bad">Vendor forms are only available for In-Production, Ready, or Completed orders.</div></main>'}
+    if(!isOperationalStatus(quote.status)){return '<main class="shell"><div class="notice bad">Vendor forms are only available for In-Production, Ready, or Completed orders.</div></main>'}
     const built=buildPages(quote,items);
     if(!built.pages.length){return '<main class="shell"><div class="notice warn">No patio door items found on this quote.</div></main>'}
     return built.pages.map((page,i)=>renderPage(quote,page,i+1,built.pages.length,built.totalQty)).join('');
