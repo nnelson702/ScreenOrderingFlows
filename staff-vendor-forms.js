@@ -1,6 +1,7 @@
 // Staff portal add-on: opens printable vendor forms for operational orders.
 (function(){
   const allowedStatuses=['in_production','ready','completed'];
+  const vendorSessionKey='screen_vendor_forms_session';
 
   function ensureVendorFormButton(){
     if(document.getElementById('vendorFormsBtn')) return;
@@ -27,6 +28,19 @@
     return field?field.value.trim():'';
   }
 
+  function getStaffSession(){
+    try{return JSON.parse(sessionStorage.getItem('screen_admin_staff_session')||'null')||null;}catch(e){return null;}
+  }
+
+  function stageVendorSession(){
+    const session=getStaffSession();
+    if(!session||!session.token) return false;
+    try{
+      localStorage.setItem(vendorSessionKey,JSON.stringify({token:session.token,created_at:Date.now()}));
+      return true;
+    }catch(e){return false;}
+  }
+
   function updateVendorButton(){
     ensureVendorFormButton();
     const btn=document.getElementById('vendorFormsBtn');
@@ -49,6 +63,10 @@
     const status=String((quote&&quote.status)||'').toLowerCase();
     if(!allowedStatuses.includes(status)){
       try{show(f.result,'bad','Vendor forms are available only for In-Production, Ready, or Completed orders.');}catch(e){alert('Vendor forms are available only for In-Production, Ready, or Completed orders.');}
+      return;
+    }
+    if(!stageVendorSession()){
+      try{show(f.result,'bad','Staff session was not available. Sign out and sign back in before generating vendor forms.');}catch(e){alert('Staff session was not available. Sign out and sign back in before generating vendor forms.');}
       return;
     }
     window.open('/vendor-forms.html?quote_id='+encodeURIComponent(quoteId),'_blank','noopener');
