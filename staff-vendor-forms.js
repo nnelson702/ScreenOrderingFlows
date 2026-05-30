@@ -69,7 +69,7 @@
       try{show(f.result,'bad','Staff session was not available. Sign out and sign back in before generating vendor forms.');}catch(e){alert('Staff session was not available. Sign out and sign back in before generating vendor forms.');}
       return;
     }
-    window.open('/vendor-forms.html?quote_id='+encodeURIComponent(quoteId),'_blank','noopener');
+    window.location.href='/vendor-forms.html?quote_id='+encodeURIComponent(quoteId);
   }
 
   const previousSetWorkflow=window.setWorkflow;
