@@ -3,6 +3,9 @@
   const allowedStatuses=['in_production','ready','completed'];
   const vendorSessionKey='screen_vendor_forms_session';
 
+  function statusKey(v){return String(v||'').toLowerCase().replace(/[-\s]+/g,'_').trim();}
+  function isOperationalStatus(v){return allowedStatuses.includes(statusKey(v));}
+
   function ensureVendorFormButton(){
     if(document.getElementById('vendorFormsBtn')) return;
     const workflow=document.querySelector('.workflow .actions');
@@ -46,9 +49,8 @@
     const btn=document.getElementById('vendorFormsBtn');
     if(!btn) return;
     const quote=getSelectedQuote();
-    const status=String((quote&&quote.status)||'').toLowerCase();
     const quoteId=selectedQuoteId();
-    const enabled=Boolean(quoteId)&&allowedStatuses.includes(status);
+    const enabled=Boolean(quoteId)&&isOperationalStatus(quote&&quote.status);
     btn.disabled=!enabled;
     btn.title=enabled?'Open printable vendor forms.':'Available after quote is In-Production, Ready, or Completed.';
   }
@@ -60,8 +62,7 @@
       return;
     }
     const quote=getSelectedQuote();
-    const status=String((quote&&quote.status)||'').toLowerCase();
-    if(!allowedStatuses.includes(status)){
+    if(!isOperationalStatus(quote&&quote.status)){
       try{show(f.result,'bad','Vendor forms are available only for In-Production, Ready, or Completed orders.');}catch(e){alert('Vendor forms are available only for In-Production, Ready, or Completed orders.');}
       return;
     }
