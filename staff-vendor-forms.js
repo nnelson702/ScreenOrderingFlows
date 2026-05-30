@@ -2,7 +2,6 @@
 (function(){
   const allowedStatuses=['in_production','ready','completed'];
   const sessionKey='screen_admin_staff_session';
-  const vendorSessionKey='screen_vendor_forms_session';
 
   function ensureVendorFormButton(){
     if(document.getElementById('vendorFormsBtn')) return;
@@ -66,7 +65,10 @@
       if(!sessionValue) return false;
       const sessionData=JSON.parse(sessionValue)||{};
       if(!sessionData.token) return false;
-      localStorage.setItem(vendorSessionKey,JSON.stringify(sessionData));
+      localStorage.setItem('screen_vendor_forms_session',JSON.stringify({
+        token:sessionData.token,
+        created_at:Date.now()
+      }));
       return true;
     }catch(e){
       return false;
