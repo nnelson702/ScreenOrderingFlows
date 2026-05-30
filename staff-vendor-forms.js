@@ -1,7 +1,7 @@
 // Staff portal add-on: opens printable vendor forms for operational orders.
 (function(){
   const allowedStatuses=['in_production','ready','completed'];
-  const sessionKey='screen_admin_staff_session';
+  const vendorSessionKey='screen_vendor_forms_session';
 
   function ensureVendorFormButton(){
     if(document.getElementById('vendorFormsBtn')) return;
@@ -26,6 +26,19 @@
     if(quote&&quote.id) return quote.id;
     const field=document.getElementById('activeQuoteId');
     return field?field.value.trim():'';
+  }
+
+  function getStaffSession(){
+    try{return JSON.parse(sessionStorage.getItem('screen_admin_staff_session')||'null')||null;}catch(e){return null;}
+  }
+
+  function stageVendorSession(){
+    const session=getStaffSession();
+    if(!session||!session.token) return false;
+    try{
+      localStorage.setItem(vendorSessionKey,JSON.stringify({token:session.token,created_at:Date.now()}));
+      return true;
+    }catch(e){return false;}
   }
 
   function updateVendorButton(){
@@ -53,26 +66,10 @@
       return;
     }
     if(!stageVendorSession()){
-      try{show(f.result,'bad','Staff session unavailable. Sign in again, then retry vendor forms.');}catch(e){alert('Staff session unavailable. Sign in again, then retry vendor forms.');}
+      try{show(f.result,'bad','Staff session was not available. Sign out and sign back in before generating vendor forms.');}catch(e){alert('Staff session was not available. Sign out and sign back in before generating vendor forms.');}
       return;
     }
     window.open('/vendor-forms.html?quote_id='+encodeURIComponent(quoteId),'_blank','noopener');
-  }
-
-  function stageVendorSession(){
-    try{
-      const sessionValue=sessionStorage.getItem(sessionKey);
-      if(!sessionValue) return false;
-      const sessionData=JSON.parse(sessionValue)||{};
-      if(!sessionData.token) return false;
-      localStorage.setItem('screen_vendor_forms_session',JSON.stringify({
-        token:sessionData.token,
-        created_at:Date.now()
-      }));
-      return true;
-    }catch(e){
-      return false;
-    }
   }
 
   const previousSetWorkflow=window.setWorkflow;
