@@ -23,11 +23,26 @@
   <script>
     const api='https://screen-ordering-api.nnelson.workers.dev';
     const sessionKey='screen_admin_staff_session';
+    const vendorSessionKey='screen_vendor_forms_session';
     const qs=new URLSearchParams(location.search);
     const quoteId=qs.get('quote_id')||'';
     const root=document.getElementById('vendorFormRoot');
     const statusText=document.getElementById('statusText');
-    function getSession(){try{return JSON.parse(sessionStorage.getItem(sessionKey)||'null')||{}}catch(e){return{}}}
+
+    function getSession(){
+      try{
+        const sessionValue=sessionStorage.getItem(sessionKey);
+        if(sessionValue) return JSON.parse(sessionValue)||{};
+
+        const stagedValue=localStorage.getItem(vendorSessionKey);
+        if(stagedValue) return JSON.parse(stagedValue)||{};
+
+        return {};
+      }catch(e){
+        return {};
+      }
+    }
+
     function token(){return getSession().token||''}
     function norm(v){return String(v||'').toLowerCase().replace(/[_-]+/g,' ').trim()}
     function isDoor(item){return norm(item.type||item.screenType)==='door'}
