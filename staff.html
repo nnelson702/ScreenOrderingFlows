@@ -268,5 +268,6 @@ function safe(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 (function init(){sync();setWorkflow(null);renderKpis([]);if(getAccess()){showApp();searchDashboard(true)}else{showLogin();setTimeout(()=>f.staffToken.focus(),50)}})();
 </script>
 <script src="staff-dashboard-v4-1-filters.js"></script>
+<script src="staff-vendor-forms.js"></script>
 </body>
 </html>

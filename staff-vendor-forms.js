@@ -1,6 +1,8 @@
 // Staff portal add-on: opens printable vendor forms for operational orders.
 (function(){
   const allowedStatuses=['in_production','ready','completed'];
+  const sessionKey='screen_admin_staff_session';
+  const vendorSessionKey='screen_vendor_forms_session';
 
   function ensureVendorFormButton(){
     if(document.getElementById('vendorFormsBtn')) return;
@@ -51,7 +53,24 @@
       try{show(f.result,'bad','Vendor forms are available only for In-Production, Ready, or Completed orders.');}catch(e){alert('Vendor forms are available only for In-Production, Ready, or Completed orders.');}
       return;
     }
+    if(!stageVendorSession()){
+      try{show(f.result,'bad','Staff session unavailable. Sign in again, then retry vendor forms.');}catch(e){alert('Staff session unavailable. Sign in again, then retry vendor forms.');}
+      return;
+    }
     window.open('/vendor-forms.html?quote_id='+encodeURIComponent(quoteId),'_blank','noopener');
+  }
+
+  function stageVendorSession(){
+    try{
+      const sessionValue=sessionStorage.getItem(sessionKey);
+      if(!sessionValue) return false;
+      const sessionData=JSON.parse(sessionValue)||{};
+      if(!sessionData.token) return false;
+      localStorage.setItem(vendorSessionKey,JSON.stringify(sessionData));
+      return true;
+    }catch(e){
+      return false;
+    }
   }
 
   const previousSetWorkflow=window.setWorkflow;
