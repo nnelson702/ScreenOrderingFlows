@@ -510,12 +510,10 @@ async function updateQuoteStatus(request, env) {
 
   if (loaded.ok) {
     if (status === 'in_production') {
-      emailStatus = {
-        notifications: await sendPaymentReceivedEmails(env, loaded.quote, loaded.items),
-        vendor_packet: transitioningIntoProduction
-          ? await maybeAutoSendVendorPacket(env, loaded.quote, loaded.items)
-          : { skipped: true, reason: 'Quote already in production' }
-      };
+      emailStatus = await sendPaymentReceivedEmails(env, loaded.quote, loaded.items);
+      emailStatus.vendor_packet = transitioningIntoProduction
+        ? await maybeAutoSendVendorPacket(env, loaded.quote, loaded.items)
+        : { skipped: true, reason: 'Quote already in production' };
     }
 
     if (status === 'ready') {
@@ -1076,7 +1074,7 @@ async function handleStripeWebhook(request, env) {
 
     if (quoteId) {
       const current = await loadQuoteWithItemsByFilter(env, 'id=eq.' + encodeURIComponent(quoteId));
-      const transitioningIntoProduction = !current.ok || current.quote.status !== 'in_production';
+      const transitioningIntoProduction = current.ok && current.quote.status !== 'in_production';
       const now = new Date().toISOString();
 
       await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quoteId), {
@@ -1607,7 +1605,8 @@ async function sendVendorPacketToStore(env, quote, items) {
 
   const packetQuote = tokenResult.quote;
   const link =
-    'https://screen-ordering-flow.nnelson.workers.dev/vendor-forms.html?packet_token=' +
+    vendorFormsBaseUrl(env) +
+    '/vendor-forms.html?packet_token=' +
     encodeURIComponent(tokenResult.token);
   const subject = 'Vendor Forms Ready - ' + clean(packetQuote.customer_name);
   let emailStatus;
@@ -1796,6 +1795,10 @@ function customerBase(request, env) {
   const allowed = String(env.ALLOWED_ORIGINS || '').split(',').map(x => x.trim()).filter(Boolean);
   if (origin && (allowed.length === 0 || allowed.includes(origin))) return origin;
   return allowed[0] || 'https://screen-ordering-flow.nnelson.workers.dev';
+}
+
+function vendorFormsBaseUrl(env) {
+  return trim(env.VENDOR_FORMS_BASE_URL || 'https://screen-ordering-flow.nnelson.workers.dev');
 }
 
 function token(len) {

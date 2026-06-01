@@ -181,11 +181,9 @@
       try{show(f.result,'bad','Load a quote before marking sent to vendor.');}catch(e){alert('Load a quote before marking sent to vendor.');}
       return;
     }
-    const notes=window.prompt('Optional notes for this vendor send confirmation:','');
-    if(notes===null) return;
     try{
       show(f.result,'warn','Saving vendor send confirmation...');
-      await authedPost('/api/vendor-packet/mark-sent-to-vendor',{quote_id:quoteId,method:'email',notes:notes||''});
+      await authedPost('/api/vendor-packet/mark-sent-to-vendor',{quote_id:quoteId,method:'email',notes:''});
       show(f.result,'ok','Vendor packet marked sent to vendor.');
       if(typeof loadAdminQuote==='function') await loadAdminQuote(quoteId);
     }catch(e){
