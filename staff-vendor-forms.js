@@ -40,7 +40,7 @@
       resend.type='button';
       resend.className='secondary';
       resend.textContent='Resend Packet to Store';
-      resend.onclick=sendPacketToStore;
+      resend.onclick=resendPacketToStore;
       actions.appendChild(resend);
     }
 
@@ -152,7 +152,7 @@
     };
   }
 
-  const sendPacketToStore=withVendorBusy(async function(){
+  const resendPacketToStore=withVendorBusy(async function(){
     const quoteId=selectedQuoteId();
     if(!quoteId){
       try{show(f.result,'bad','Load a quote before resending the vendor packet.');}catch(e){alert('Load a quote before resending the vendor packet.');}

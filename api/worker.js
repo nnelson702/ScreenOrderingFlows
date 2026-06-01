@@ -1089,9 +1089,11 @@ async function handleStripeWebhook(request, env) {
       const loaded = await loadQuoteWithItemsByFilter(env, 'id=eq.' + encodeURIComponent(quoteId));
       if (loaded.ok) {
         await sendPaymentReceivedEmails(env, loaded.quote, loaded.items);
+        // If the pre-patch read failed, fall back to vendor packet state so a transient read failure
+        // does not block the initial vendor packet send after Stripe moves the order into production.
         const inferredTransition = previousStatus
           ? previousStatus !== 'in_production'
-          : statusAllowsAutoVendorPacket(loaded.quote.vendor_packet_status);
+          : vendorPacketStatusAllowsAutoSend(loaded.quote.vendor_packet_status);
         if (inferredTransition) {
           await maybeAutoSendVendorPacket(env, loaded.quote, loaded.items);
         }
@@ -1583,7 +1585,7 @@ async function createOrReuseVendorPacketToken(env, quote) {
 
   if (!existingToken) patch.vendor_packet_token = tokenValue;
   if (existingTokenHash !== tokenHash) patch.vendor_packet_token_hash = tokenHash;
-  if (existingCreatedAt !== createdAt) patch.vendor_packet_token_created_at = createdAt;
+  if (!existingCreatedAt) patch.vendor_packet_token_created_at = createdAt;
 
   if (Object.keys(patch).length) {
     const updated = await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quote.id), patch);
@@ -1806,7 +1808,7 @@ function vendorFormsBaseUrl(env) {
   return trim(env.VENDOR_FORMS_BASE_URL || 'https://screen-ordering-flow.nnelson.workers.dev');
 }
 
-function statusAllowsAutoVendorPacket(status) {
+function vendorPacketStatusAllowsAutoSend(status) {
   return !['sent_to_store', 'opened_by_store', 'sent_to_vendor'].includes(clean(status).toLowerCase());
 }
 
