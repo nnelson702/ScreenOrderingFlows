@@ -26,6 +26,7 @@
     const vendorSessionKey='screen_vendor_forms_session';
     const qs=new URLSearchParams(location.search);
     const quoteId=qs.get('quote_id')||'';
+    const packetToken=qs.get('packet_token')||'';
     const root=document.getElementById('vendorFormRoot');
     const statusText=document.getElementById('statusText');
 
@@ -46,15 +47,28 @@
     function token(){return getSession().token||''}
     function norm(v){return String(v||'').toLowerCase().replace(/[_-]+/g,' ').trim()}
     function isDoor(item){return norm(item.type||item.screenType)==='door'}
-    async function load(){
-      if(!quoteId){root.innerHTML='<main class="shell"><div class="notice bad">Missing quote_id.</div></main>';statusText.textContent='No quote selected.';return}
+    async function loadByPacketToken(){
+      statusText.textContent='Loading vendor packet...';
+      const res=await fetch(api+'/api/vendor-packet/view/'+encodeURIComponent(packetToken));
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok||!data.ok){root.innerHTML='<main class="shell"><div class="notice bad">Unable to load vendor packet: '+String(data.error||('HTTP '+res.status))+'</div></main>';statusText.textContent='Load failed.';return null}
+      return data
+    }
+    async function loadByQuoteId(){
+      if(!quoteId){root.innerHTML='<main class="shell"><div class="notice bad">Missing quote_id.</div></main>';statusText.textContent='No quote selected.';return null}
       const t=token();
-      if(!t){root.innerHTML='<main class="shell"><div class="notice bad">No staff session found. Open this from the staff dashboard after signing in.</div></main>';statusText.textContent='Not signed in.';return}
+      if(!t){root.innerHTML='<main class="shell"><div class="notice bad">No staff session found. Open this from the staff dashboard after signing in.</div></main>';statusText.textContent='Not signed in.';return null}
       statusText.textContent='Loading quote '+quoteId+'...';
       const headers={'Content-Type':'application/json'};headers['Author'+'ization']='Bear'+'er '+t;
       const res=await fetch(api+'/api/quote/admin-view',{method:'POST',headers,body:JSON.stringify({quote_id:quoteId})});
       const data=await res.json().catch(()=>({}));
-      if(!res.ok||!data.ok){root.innerHTML='<main class="shell"><div class="notice bad">Unable to load quote: '+String(data.error||('HTTP '+res.status))+'</div></main>';statusText.textContent='Load failed.';return}
+      if(!res.ok||!data.ok){root.innerHTML='<main class="shell"><div class="notice bad">Unable to load quote: '+String(data.error||('HTTP '+res.status))+'</div></main>';statusText.textContent='Load failed.';return null}
+      return data
+    }
+    async function load(){
+      if(!packetToken&&!quoteId){root.innerHTML='<main class="shell"><div class="notice bad">Missing quote_id or packet_token.</div></main>';statusText.textContent='No packet selected.';return}
+      const data=packetToken?await loadByPacketToken():await loadByQuoteId();
+      if(!data)return;
       const quote=data.quote||{};
       const items=data.items||[];
       const hasWindows=items.some(item=>!isDoor(item));
@@ -64,7 +78,7 @@
       if(hasDoors)parts.push(VendorDoorForms.render(quote,items));
       if(!parts.length){root.innerHTML='<main class="shell"><div class="notice warn">No vendor form items found on this quote.</div></main>';statusText.textContent='No form items.';return}
       root.innerHTML=parts.join('');
-      statusText.textContent='Loaded vendor forms for quote '+quoteId+'. Use Print to save as PDF or print.';
+      statusText.textContent='Loaded vendor forms for quote '+(quote.id||quoteId)+'. Use Print to save as PDF or print.';
     }
     load().catch(err=>{root.innerHTML='<main class="shell"><div class="notice bad">Vendor form failed: '+String(err.message||err)+'</div></main>';statusText.textContent='Error.'});
   </script>
