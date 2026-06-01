@@ -16,10 +16,7 @@
   }
   function hasVendorPacketFields(quote){
     if(!quote||typeof quote!=='object') return false;
-    return Object.prototype.hasOwnProperty.call(quote,'vendor_packet_status')||
-      Object.prototype.hasOwnProperty.call(quote,'vendor_packet_sent_to_store_at')||
-      Object.prototype.hasOwnProperty.call(quote,'vendor_packet_opened_at')||
-      Object.prototype.hasOwnProperty.call(quote,'vendor_order_sent_to_vendor_at');
+    return Object.prototype.hasOwnProperty.call(quote,'vendor_packet_status');
   }
 
   function ensureVendorPacketUi(){

@@ -1074,7 +1074,7 @@ async function handleStripeWebhook(request, env) {
 
     if (quoteId) {
       const current = await loadQuoteWithItemsByFilter(env, 'id=eq.' + encodeURIComponent(quoteId));
-      const transitioningIntoProduction = current.ok && current.quote.status !== 'in_production';
+      const previousStatus = current.ok ? clean(current.quote.status).toLowerCase() : '';
       const now = new Date().toISOString();
 
       await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quoteId), {
@@ -1089,7 +1089,10 @@ async function handleStripeWebhook(request, env) {
       const loaded = await loadQuoteWithItemsByFilter(env, 'id=eq.' + encodeURIComponent(quoteId));
       if (loaded.ok) {
         await sendPaymentReceivedEmails(env, loaded.quote, loaded.items);
-        if (transitioningIntoProduction) {
+        const inferredTransition = previousStatus
+          ? previousStatus !== 'in_production'
+          : statusAllowsAutoVendorPacket(loaded.quote.vendor_packet_status);
+        if (inferredTransition) {
           await maybeAutoSendVendorPacket(env, loaded.quote, loaded.items);
         }
       }
@@ -1571,14 +1574,16 @@ async function createOrReuseVendorPacketToken(env, quote) {
 
   const now = new Date().toISOString();
   const existingToken = clean(quote.vendor_packet_token);
+  const existingTokenHash = clean(quote.vendor_packet_token_hash);
+  const existingCreatedAt = clean(quote.vendor_packet_token_created_at);
   const tokenValue = existingToken || token(48);
-  const tokenHash = clean(quote.vendor_packet_token_hash) || await sha256Hex(tokenValue);
-  const createdAt = clean(quote.vendor_packet_token_created_at) || now;
+  const tokenHash = existingTokenHash || await sha256Hex(tokenValue);
+  const createdAt = existingCreatedAt || now;
   const patch = {};
 
   if (!existingToken) patch.vendor_packet_token = tokenValue;
-  if (clean(quote.vendor_packet_token_hash) !== tokenHash) patch.vendor_packet_token_hash = tokenHash;
-  if (clean(quote.vendor_packet_token_created_at) !== createdAt) patch.vendor_packet_token_created_at = createdAt;
+  if (existingTokenHash !== tokenHash) patch.vendor_packet_token_hash = tokenHash;
+  if (existingCreatedAt !== createdAt) patch.vendor_packet_token_created_at = createdAt;
 
   if (Object.keys(patch).length) {
     const updated = await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quote.id), patch);
@@ -1799,6 +1804,10 @@ function customerBase(request, env) {
 
 function vendorFormsBaseUrl(env) {
   return trim(env.VENDOR_FORMS_BASE_URL || 'https://screen-ordering-flow.nnelson.workers.dev');
+}
+
+function statusAllowsAutoVendorPacket(status) {
+  return !['sent_to_store', 'opened_by_store', 'sent_to_vendor'].includes(clean(status).toLowerCase());
 }
 
 function token(len) {
