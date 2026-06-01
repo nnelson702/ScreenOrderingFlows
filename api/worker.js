@@ -79,6 +79,19 @@ export default {
         return cors(request, env, await adminViewQuote(request, env));
       }
 
+      if (request.method === 'GET' && url.pathname.startsWith('/api/vendor-packet/view/')) {
+        const packetToken = url.pathname.split('/').pop();
+        return cors(request, env, await viewVendorPacket(env, packetToken));
+      }
+
+      if (request.method === 'POST' && url.pathname === '/api/vendor-packet/mark-sent-to-vendor') {
+        return cors(request, env, await markVendorPacketSentToVendor(request, env));
+      }
+
+      if (request.method === 'POST' && url.pathname === '/api/vendor-packet/send-to-store') {
+        return cors(request, env, await sendVendorPacketToStoreEndpoint(request, env));
+      }
+
       if (request.method === 'POST' && url.pathname === '/api/quote/status') {
         return cors(request, env, await updateQuoteStatus(request, env));
       }
@@ -378,6 +391,47 @@ async function adminViewQuote(request, env) {
   return json({ ok: true, quote: loaded.quote, items: loaded.items });
 }
 
+async function viewVendorPacket(env, packetToken) {
+  if (!packetToken) return json({ ok: false, error: 'Missing packet token' }, 400);
+
+  const tokenHash = await sha256Hex(packetToken);
+  const loaded = await loadQuoteWithItemsByFilter(
+    env,
+    'vendor_packet_token_hash=eq.' + encodeURIComponent(tokenHash) + '&limit=1'
+  );
+
+  if (!loaded.ok) {
+    return json({ ok: false, error: loaded.error, details: loaded.details }, loaded.status || 500);
+  }
+
+  if (!isOperationalVendorStatus(loaded.quote.status)) {
+    return json({
+      ok: false,
+      error: 'Vendor packet unavailable for current quote status',
+      allowed_statuses: ['in_production', 'ready', 'completed']
+    }, 403);
+  }
+
+  let quote = loaded.quote;
+  if (quote.vendor_packet_status !== 'sent_to_vendor') {
+    const now = new Date().toISOString();
+    const patch = {
+      vendor_packet_status: 'opened_by_store',
+      vendor_packet_opened_at: now,
+      vendor_packet_opened_by: quote.store_email || 'packet_link'
+    };
+
+    const updated = await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quote.id), patch);
+    if (!updated.ok) {
+      return json({ ok: false, error: 'Supabase vendor packet update failed', details: updated.error }, 500);
+    }
+
+    quote = { ...quote, ...patch };
+  }
+
+  return json({ ok: true, quote, items: loaded.items });
+}
+
 async function updateQuoteStatus(request, env) {
   const staff = await requireStaff(request, env);
   if (!staff.ok) return staff.response;
@@ -407,6 +461,12 @@ async function updateQuoteStatus(request, env) {
     }, 400);
   }
 
+  const current = await loadQuoteWithItemsByFilter(env, 'id=eq.' + encodeURIComponent(quoteId));
+  if (!current.ok) {
+    return json({ ok: false, error: current.error, details: current.details }, current.status || 500);
+  }
+
+  const transitioningIntoProduction = status === 'in_production' && current.quote.status !== 'in_production';
   const now = new Date().toISOString();
   const patch = {
     status,
@@ -451,6 +511,9 @@ async function updateQuoteStatus(request, env) {
   if (loaded.ok) {
     if (status === 'in_production') {
       emailStatus = await sendPaymentReceivedEmails(env, loaded.quote, loaded.items);
+      emailStatus.vendor_packet = transitioningIntoProduction
+        ? await maybeAutoSendVendorPacket(env, loaded.quote, loaded.items)
+        : { skipped: true, reason: 'Quote already in production' };
     }
 
     if (status === 'ready') {
@@ -468,6 +531,71 @@ async function updateQuoteStatus(request, env) {
     status,
     email_status: emailStatus
   });
+}
+
+async function markVendorPacketSentToVendor(request, env) {
+  const staff = await requireStaff(request, env);
+  if (!staff.ok) return staff.response;
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (err) {
+    return json({ ok: false, error: 'Invalid JSON body' }, 400);
+  }
+
+  const quoteId = clean(body.quote_id);
+  const method = clean(body.method || 'email') || 'email';
+  const notes = clean(body.notes);
+
+  if (!quoteId) return json({ ok: false, error: 'Missing quote_id' }, 400);
+
+  const loaded = await loadQuoteWithItemsByFilter(env, 'id=eq.' + encodeURIComponent(quoteId));
+  if (!loaded.ok) {
+    return json({ ok: false, error: loaded.error, details: loaded.details }, loaded.status || 500);
+  }
+
+  const now = new Date().toISOString();
+  const updated = await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quoteId), {
+    vendor_packet_status: 'sent_to_vendor',
+    vendor_order_sent_to_vendor_at: now,
+    vendor_order_sent_to_vendor_by:
+      staff.staff.label ||
+      staff.staff.store_name ||
+      staff.staff.access_key_id ||
+      'staff',
+    vendor_order_sent_to_vendor_method: method,
+    vendor_order_sent_to_vendor_notes: notes || null
+  });
+
+  if (!updated.ok) {
+    return json({ ok: false, error: 'Supabase vendor packet update failed', details: updated.error }, 500);
+  }
+
+  return json({ ok: true, quote_id: quoteId });
+}
+
+async function sendVendorPacketToStoreEndpoint(request, env) {
+  const staff = await requireStaff(request, env);
+  if (!staff.ok) return staff.response;
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (err) {
+    return json({ ok: false, error: 'Invalid JSON body' }, 400);
+  }
+
+  const quoteId = clean(body.quote_id);
+  if (!quoteId) return json({ ok: false, error: 'Missing quote_id' }, 400);
+
+  const loaded = await loadQuoteWithItemsByFilter(env, 'id=eq.' + encodeURIComponent(quoteId));
+  if (!loaded.ok) {
+    return json({ ok: false, error: loaded.error, details: loaded.details }, loaded.status || 500);
+  }
+
+  const emailStatus = await sendVendorPacketToStore(env, loaded.quote, loaded.items);
+  return json({ ok: true, quote_id: quoteId, email_status: emailStatus });
 }
 
 async function loadQuoteWithItemsByFilter(env, filter) {
@@ -945,6 +1073,8 @@ async function handleStripeWebhook(request, env) {
     const quoteId = session && session.metadata && session.metadata.quote_id;
 
     if (quoteId) {
+      const current = await loadQuoteWithItemsByFilter(env, 'id=eq.' + encodeURIComponent(quoteId));
+      const previousStatus = current.ok ? clean(current.quote.status).toLowerCase() : '';
       const now = new Date().toISOString();
 
       await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quoteId), {
@@ -956,13 +1086,17 @@ async function handleStripeWebhook(request, env) {
         status_updated_at: now
       });
 
-      const q = await sbSelect(env, 'quotes', 'id=eq.' + encodeURIComponent(quoteId));
-      const quote = q.ok && q.data ? q.data[0] : null;
-
-      if (quote) {
-        const itemsResult = await sbSelect(env, 'quote_items', 'quote_id=eq.' + encodeURIComponent(quote.id) + '&order=sort_index.asc');
-        const items = itemsResult.ok ? (itemsResult.data || []) : [];
-        await sendPaymentReceivedEmails(env, quote, items);
+      const loaded = await loadQuoteWithItemsByFilter(env, 'id=eq.' + encodeURIComponent(quoteId));
+      if (loaded.ok) {
+        await sendPaymentReceivedEmails(env, loaded.quote, loaded.items);
+        // If the pre-patch read failed, fall back to vendor packet state so a transient read failure
+        // does not block the initial vendor packet send after Stripe moves the order into production.
+        const inferredTransition = previousStatus
+          ? previousStatus !== 'in_production'
+          : vendorPacketStatusAllowsAutoSend(loaded.quote.vendor_packet_status);
+        if (inferredTransition) {
+          await maybeAutoSendVendorPacket(env, loaded.quote, loaded.items);
+        }
       }
     }
   }
@@ -1217,6 +1351,34 @@ function paidStoreNoticeText(quote, items) {
   ].join('\n');
 }
 
+function vendorPacketHtml(quote, items, link) {
+  return emailShell('Vendor forms ready', `
+    <p>The vendor forms packet is ready for <strong>${esc(quote.customer_name)}</strong>.</p>
+    <p><strong>Store:</strong> ${esc(quote.store_name)}<br><strong>Quote ID:</strong> ${esc(quote.id)}<br><strong>Total:</strong> ${esc(money(quote.total_cents))}</p>
+    <p><a href="${esc(link)}" style="display:inline-block;background:#b01c2e;color:#fff;text-decoration:none;padding:12px 18px;border-radius:6px;font-weight:bold;">Open Vendor Forms</a></p>
+    <p>Please open the link, save or print the vendor forms, send the packet to ScreenFab/vendor, then mark it sent in the staff portal.</p>
+    ${quoteSummaryHtml(quote, items)}
+  `);
+}
+
+function vendorPacketText(quote, items, link) {
+  return [
+    'Vendor forms are ready.',
+    '',
+    'Customer: ' + quote.customer_name,
+    'Store: ' + quote.store_name,
+    'Quote ID: ' + quote.id,
+    'Total: ' + money(quote.total_cents),
+    '',
+    'Open Vendor Forms:',
+    link,
+    '',
+    'Please open the link, save or print the vendor forms, send the packet to ScreenFab/vendor, then mark it sent in the staff portal.',
+    '',
+    quoteSummaryText(quote, items)
+  ].join('\n');
+}
+
 function readyCustomerHtml(quote, items, readyPhrase) {
   return emailShell('Your screen order is ready', `
     <p>Your screen order is ${esc(readyPhrase)}.</p>
@@ -1405,12 +1567,132 @@ function envStatus(env) {
   };
 }
 
+function isOperationalVendorStatus(status) {
+  return ['in_production', 'ready', 'completed'].includes(clean(status).toLowerCase());
+}
+
+async function createOrReuseVendorPacketToken(env, quote) {
+  if (!quote || !quote.id) return { ok: false, error: 'Quote not found' };
+
+  const now = new Date().toISOString();
+  const existingToken = clean(quote.vendor_packet_token);
+  const existingTokenHash = clean(quote.vendor_packet_token_hash);
+  const existingCreatedAt = clean(quote.vendor_packet_token_created_at);
+  const tokenValue = existingToken || token(48);
+  const tokenHash = existingTokenHash ? existingTokenHash : await sha256Hex(tokenValue);
+  const createdAt = existingCreatedAt || now;
+  const patch = {};
+
+  if (!existingToken) patch.vendor_packet_token = tokenValue;
+  if (!existingTokenHash) patch.vendor_packet_token_hash = tokenHash;
+  if (!existingCreatedAt) patch.vendor_packet_token_created_at = createdAt;
+
+  if (Object.keys(patch).length) {
+    const updated = await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(quote.id), patch);
+    if (!updated.ok) return { ok: false, error: 'Supabase vendor packet token update failed', details: updated.error };
+  }
+
+  return {
+    ok: true,
+    token: tokenValue,
+    quote: {
+      ...quote,
+      vendor_packet_token: tokenValue,
+      vendor_packet_token_hash: tokenHash,
+      vendor_packet_token_created_at: createdAt
+    }
+  };
+}
+
+async function sendVendorPacketToStore(env, quote, items) {
+  if (!quote || !quote.id) return { ok: false, error: 'Quote not found' };
+
+  const tokenResult = await createOrReuseVendorPacketToken(env, quote);
+  if (!tokenResult.ok) return tokenResult;
+
+  const packetQuote = tokenResult.quote;
+  const link =
+    vendorFormsBaseUrl(env) +
+    '/vendor-forms.html?packet_token=' +
+    encodeURIComponent(tokenResult.token);
+  const subject = 'Vendor Forms Ready - ' + clean(packetQuote.customer_name);
+  let emailStatus;
+
+  try {
+    if (!packetQuote.store_email) throw new Error('Quote store_email is missing');
+    if (!env.RESEND_API_KEY) throw new Error('RESEND_API_KEY not set');
+
+    emailStatus = await sendEmail(env, {
+      to: packetQuote.store_email,
+      subject,
+      html: vendorPacketHtml(packetQuote, items, link),
+      text: vendorPacketText(packetQuote, items, link)
+    });
+  } catch (err) {
+    emailStatus = {
+      ok: false,
+      to: packetQuote.store_email || null,
+      subject,
+      error: stringifyError(err)
+    };
+  }
+
+  const patch = emailStatus.ok
+    ? {
+        vendor_packet_sent_to_store_at: new Date().toISOString(),
+        vendor_packet_sent_to_store_email: packetQuote.store_email,
+        vendor_packet_last_error: null
+      }
+    : {
+        vendor_packet_last_error: stringifyError(emailStatus.error || emailStatus)
+      };
+
+  if (packetQuote.vendor_packet_status !== 'sent_to_vendor') {
+    patch.vendor_packet_status = emailStatus.ok ? 'sent_to_store' : 'send_failed';
+  }
+
+  const updated = await sbPatch(env, 'quotes', 'id=eq.' + encodeURIComponent(packetQuote.id), patch);
+  if (!updated.ok) {
+    return {
+      ok: false,
+      error: 'Supabase vendor packet send update failed',
+      details: updated.error,
+      email_status: emailStatus
+    };
+  }
+
+  return emailStatus;
+}
+
+async function maybeAutoSendVendorPacket(env, quote, items) {
+  if (!quote || !isOperationalVendorStatus(quote.status)) {
+    return { skipped: true, reason: 'Quote is not in an operational vendor status' };
+  }
+
+  if (!vendorPacketStatusAllowsAutoSend(quote.vendor_packet_status)) {
+    return { skipped: true, reason: 'Vendor packet already sent or confirmed' };
+  }
+
+  return sendVendorPacketToStore(env, quote, items);
+}
+
 function summarizeStripeError(error) {
   if (!error) return 'Unknown Stripe error';
   if (typeof error === 'string') return error;
   if (error.error && error.error.message) return error.error.message;
   if (error.message) return error.message;
   return JSON.stringify(error);
+}
+
+function stringifyError(error) {
+  if (error == null) return 'Unknown error';
+  if (typeof error === 'string') return error;
+  if (error instanceof Error) return error.message;
+  try {
+    return JSON.stringify(error);
+  } catch (err) {
+    return String(error);
+  }
 }
 
 function missingEnv(env, names) { return names.filter((name) => !env[name]); }
@@ -1520,6 +1802,14 @@ function customerBase(request, env) {
   const allowed = String(env.ALLOWED_ORIGINS || '').split(',').map(x => x.trim()).filter(Boolean);
   if (origin && (allowed.length === 0 || allowed.includes(origin))) return origin;
   return allowed[0] || 'https://screen-ordering-flow.nnelson.workers.dev';
+}
+
+function vendorFormsBaseUrl(env) {
+  return trim(env.VENDOR_FORMS_BASE_URL || 'https://screen-ordering-flow.nnelson.workers.dev');
+}
+
+function vendorPacketStatusAllowsAutoSend(status) {
+  return !['sent_to_store', 'opened_by_store', 'sent_to_vendor'].includes(clean(status).toLowerCase());
 }
 
 function token(len) {
