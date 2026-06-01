@@ -180,7 +180,7 @@
     }
     try{
       show(f.result,'warn','Saving vendor send confirmation...');
-      await authedPost('/api/vendor-packet/mark-sent-to-vendor',{quote_id:quoteId,method:'email',notes:''});
+      await authedPost('/api/vendor-packet/mark-sent-to-vendor',{quote_id:quoteId,method:'email'});
       show(f.result,'ok','Vendor packet marked sent to vendor.');
       if(typeof loadAdminQuote==='function') await loadAdminQuote(quoteId);
     }catch(e){

@@ -1579,12 +1579,12 @@ async function createOrReuseVendorPacketToken(env, quote) {
   const existingTokenHash = clean(quote.vendor_packet_token_hash);
   const existingCreatedAt = clean(quote.vendor_packet_token_created_at);
   const tokenValue = existingToken || token(48);
-  const tokenHash = existingTokenHash || await sha256Hex(tokenValue);
+  const tokenHash = existingTokenHash ? existingTokenHash : await sha256Hex(tokenValue);
   const createdAt = existingCreatedAt || now;
   const patch = {};
 
   if (!existingToken) patch.vendor_packet_token = tokenValue;
-  if (existingTokenHash !== tokenHash) patch.vendor_packet_token_hash = tokenHash;
+  if (!existingTokenHash) patch.vendor_packet_token_hash = tokenHash;
   if (!existingCreatedAt) patch.vendor_packet_token_created_at = createdAt;
 
   if (Object.keys(patch).length) {
@@ -1669,8 +1669,8 @@ async function maybeAutoSendVendorPacket(env, quote, items) {
     return { skipped: true, reason: 'Quote is not in an operational vendor status' };
   }
 
-  if (quote.vendor_packet_status === 'sent_to_vendor') {
-    return { skipped: true, reason: 'Vendor packet already marked sent to vendor' };
+  if (!vendorPacketStatusAllowsAutoSend(quote.vendor_packet_status)) {
+    return { skipped: true, reason: 'Vendor packet already sent or confirmed' };
   }
 
   return sendVendorPacketToStore(env, quote, items);
