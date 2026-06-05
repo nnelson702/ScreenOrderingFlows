@@ -134,10 +134,89 @@
     document.head.appendChild(style);
   }
 
+  function materialColor(id, label) {
+    return { id, label };
+  }
+
+  const MATERIAL_COLOR_OPTIONS_V2 = {
+    FIBERGLASS: [
+      materialColor('black', 'Black'),
+      materialColor('grey', 'Grey')
+    ],
+    ALUMINUM: [
+      materialColor('brite', 'Brite')
+    ],
+    PET: [
+      materialColor('black', 'Black')
+    ],
+    'VIMCO 20x30': [
+      materialColor('black', 'Black')
+    ],
+    'SOLAR 70': [
+      materialColor('black', 'Black')
+    ],
+    'SUNTEX 80': [
+      materialColor('black', 'Black'),
+      materialColor('brown', 'Brown'),
+      materialColor('grey', 'Grey'),
+      materialColor('dark_bronze', 'Dark Bronze'),
+      materialColor('stucco', 'Stucco'),
+      materialColor('beige', 'Beige')
+    ],
+    'SUNTEX 90': [
+      materialColor('black', 'Black'),
+      materialColor('brown', 'Brown'),
+      materialColor('grey', 'Grey'),
+      materialColor('dark_bronze', 'Dark Bronze'),
+      materialColor('stucco', 'Stucco'),
+      materialColor('beige', 'Beige')
+    ],
+    'SOLAR 90': [
+      materialColor('black', 'Black'),
+      materialColor('brown', 'Brown')
+    ]
+  };
+
+  function materialKey(value) {
+    return String(value || '').trim().toUpperCase();
+  }
+
+  function applyMaterialColorOptionsV2() {
+    const config = typeof AppState !== 'undefined' ? AppState.config : null;
+    if (!config || !config.materialOptions || config.__materialColorOptionsV2Applied) return false;
+
+    ['window', 'door'].forEach((screenType) => {
+      const list = Array.isArray(config.materialOptions[screenType]) ? config.materialOptions[screenType] : [];
+      list.forEach((material) => {
+        const key = materialKey(material.id || material.label);
+        if (MATERIAL_COLOR_OPTIONS_V2[key]) {
+          material.colors = MATERIAL_COLOR_OPTIONS_V2[key].map((color) => ({ ...color }));
+        }
+      });
+    });
+
+    config.__materialColorOptionsV2Applied = true;
+
+    if (typeof updateMaterialColorOptions === 'function') updateMaterialColorOptions();
+    if (typeof renderMaterialColorTiles === 'function') renderMaterialColorTiles();
+    return true;
+  }
+
+  function installMaterialColorOptionsV2() {
+    if (applyMaterialColorOptionsV2()) return;
+
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts += 1;
+      if (applyMaterialColorOptionsV2() || attempts >= 40) clearInterval(timer);
+    }, 125);
+  }
+
   function init() {
     installMobileUiStyles();
     installNumericInputHints();
     installHardwareQtyControls();
+    installMaterialColorOptionsV2();
   }
 
   if (document.readyState === 'loading') {
