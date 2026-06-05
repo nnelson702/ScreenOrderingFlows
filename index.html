@@ -167,7 +167,7 @@
                 <th>Height</th>
                 <th>Frame</th>
                 <th>Material</th>
-                <th>Crossbar</th>
+                <th>Crossbar /<br>Handle</th>
                 <th>Hardware</th>
                 <th>Line Price</th>
                 <th></th>
@@ -259,29 +259,24 @@
           <div class="screen-step" data-step="2">
             <div class="form-grid">
               <div class="form-field full-width">
-                <label>Measure the screen frame</label>
-              <div class="form-field full-width helper-text">
-                <p><strong>Measuring tip:</strong> Measure from the <strong>outside edge</strong> of the frame at the top corners (width), and the <strong>outside edge</strong> of the frame at the side corners (height).</p>
-                <p><strong>Orientation:</strong> If you remove the screen, lay it flat with the side that faces <strong>away from the house</strong> facing up. When you see “left/right/top/bottom” later, always think of the screen as you’re standing <strong>outside looking in</strong>.</p>
-              </div>
-
+                <label>Enter the finished outside dimensions of the screen.</label>
+                <p class="helper-text">
+                  Measure width and height to the nearest 1/8 inch.
+                </p>
               </div>
 
               <div class="form-field">
-                <label for="screenWidthWhole">Width (inches)</label>
+                <label for="screenWidthWhole">Width</label>
                 <div class="dimension-input">
                   <input
                     id="screenWidthWhole"
                     name="screenWidthWhole"
                     type="number"
                     min="0"
-                    placeholder="Whole"
+                    placeholder="Whole inches"
                     required
                   />
-                  <select
-                    id="screenWidthFraction"
-                    name="screenWidthFraction"
-                  >
+                  <select id="screenWidthFraction" name="screenWidthFraction">
                     <option value="">0</option>
                     <option value="1/8">1/8</option>
                     <option value="1/4">1/4</option>
@@ -295,20 +290,17 @@
               </div>
 
               <div class="form-field">
-                <label for="screenHeightWhole">Height (inches)</label>
+                <label for="screenHeightWhole">Height</label>
                 <div class="dimension-input">
                   <input
                     id="screenHeightWhole"
                     name="screenHeightWhole"
                     type="number"
                     min="0"
-                    placeholder="Whole"
+                    placeholder="Whole inches"
                     required
                   />
-                  <select
-                    id="screenHeightFraction"
-                    name="screenHeightFraction"
-                  >
+                  <select id="screenHeightFraction" name="screenHeightFraction">
                     <option value="">0</option>
                     <option value="1/8">1/8</option>
                     <option value="1/4">1/4</option>
@@ -326,71 +318,79 @@
           <!-- STEP 3: Frame -->
           <div class="screen-step" data-step="3">
             <div class="form-grid">
+              <div class="form-field full-width">
+                <label>Frame</label>
+                <p class="helper-text">
+                  Choose the frame profile and color.
+                </p>
+              </div>
               <div class="form-field">
                 <label for="frameType">Frame Type</label>
-                <select id="frameType" name="frameType" required>
-                  <!-- options populated from config based on screen type -->
-                </select>
+                <select id="frameType" name="frameType" required></select>
               </div>
-
               <div class="form-field">
-                <label class="field-label">Frame Color</label>
-                <select id="frameColor" name="frameColor" required class="visually-hidden" aria-hidden="true" tabindex="-1">
-                  <!-- options populated from config -->
-                </select>
-                <div id="frameColorTiles" class="swatch-tiles" aria-label="Frame color options"></div>
+                <label for="frameColor">Frame Color</label>
+                <select id="frameColor" name="frameColor" required></select>
+                <div id="frameColorTiles" class="swatch-tile-grid"></div>
+              </div>
+              <div id="frameColorSwatchPreview" class="swatch-preview hidden full-width">
+                <img id="frameColorSwatchImg" alt="Frame color swatch" />
+                <div id="frameColorSwatchLabel" class="helper-text small"></div>
               </div>
             </div>
           </div>
 
-          <!-- STEP 4: Material -->
+          <!-- STEP 4: Screen material -->
           <div class="screen-step" data-step="4">
             <div class="form-grid">
-              <div class="form-field">
-                <label for="materialType">Material Type</label>
-                <select id="materialType" name="materialType" required>
-                  <!-- options populated from config -->
-                </select>
-              </div>
-
-              <div class="form-field">
-                <label class="field-label">Material Color</label>
-                <select id="materialColor" name="materialColor" required class="visually-hidden" aria-hidden="true" tabindex="-1">
-                  <!-- options populated based on material -->
-                </select>
-                <div id="materialColorTiles" class="swatch-tiles" aria-label="Material color options"></div>
-              </div>
-
               <div class="form-field full-width">
+                <label>Screen Material</label>
                 <p id="materialDetails" class="helper-text">
                   Select a material to see its features.
                 </p>
               </div>
+              <div class="form-field">
+                <label for="materialType">Material Type</label>
+                <select id="materialType" name="materialType" required></select>
+              </div>
+              <div class="form-field">
+                <label for="materialColor">Material Color</label>
+                <select id="materialColor" name="materialColor" required></select>
+                <div id="materialColorTiles" class="swatch-tile-grid"></div>
+              </div>
+              <div id="materialColorSwatchPreview" class="swatch-preview hidden full-width">
+                <img id="materialColorSwatchImg" alt="Material color swatch" />
+                <div id="materialColorSwatchLabel" class="helper-text small"></div>
+              </div>
             </div>
           </div>
 
-          <!-- STEP 5: Hardware (windows) OR rollers + handle (doors) -->
+          <!-- STEP 5: Hardware -->
           <div class="screen-step" data-step="5">
             <div class="form-grid">
               <div class="form-field full-width">
                 <label id="step5Title">Hardware</label>
-                <p id="step5Subtitle" class="helper-text">Let's place the hardware.</p>
-                <div class="helper-text">
-                  <p><strong>Place hardware as if you are outside looking into your home.</strong> Left/right/top/bottom should match what you see from the outside.</p>
-                  <p>If the screen is removed, lay it on a flat surface with the side that faces <strong>away from the house</strong> facing up before choosing locations.</p>
-                </div>
-
+                <p id="step5Subtitle" class="helper-text">
+                  Let's place the hardware on your window screen.
+                </p>
               </div>
 
               <!-- Window hardware section -->
               <div id="windowOnlyFields" class="window-only full-width">
-                <div class="hardware-grid">
+                <p class="helper-text">
+                  <strong>Place hardware as if you are outside looking into your home.</strong>
+                  Left/right/top/bottom should match what you see from the outside.
+                </p>
+                <p class="helper-text">
+                  If the screen is removed, lay it on a flat surface with the side that faces
+                  <strong>away from the house</strong> facing up before choosing locations.
+                </p>
+
+                <div class="hardware-layout">
                   <div class="hardware-controls">
                     <div class="form-field">
                       <label for="hardwareType">Hardware Type</label>
-                      <select id="hardwareType" name="hardwareType">
-                        <!-- from config.hardwareOptions -->
-                      </select>
+                      <select id="hardwareType" name="hardwareType"></select>
                     </div>
 
                     <div class="form-field">
@@ -637,7 +637,7 @@
                 <th>Height</th>
                 <th>Frame</th>
                 <th>Material</th>
-                <th>Crossbar</th>
+                <th>Crossbar /<br>Handle</th>
                 <th>Hardware</th>
                 <th>Line Price</th>
               </tr>
@@ -706,6 +706,7 @@
   <script src="app.js?v=4"></script>
   <script src="post-app-fixes.js?v=1"></script>
   <script src="mobile-ui-polish.js?v=1"></script>
+  <script src="quote-display-fixes.js?v=1"></script>
   <script>
     (function refreshPaymentLinkAfterSuccessRender() {
       const originalRenderSuccessView = window.renderSuccessView;
