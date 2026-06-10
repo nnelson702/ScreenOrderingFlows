@@ -1147,8 +1147,8 @@ async function sendQuoteCreatedEmails(env, quote, items) {
   results.push(await sendEmail(env, {
     to: quote.customer_email,
     subject: customerSubject,
-    html: customerQuoteHtml(quote, items, paymentUrl),
-    text: customerQuoteText(quote, items, paymentUrl)
+    html: customerQuoteHtml(env, quote, items, paymentUrl),
+    text: customerQuoteText(env, quote, items, paymentUrl)
   }));
 
   results.push(await sendEmail(env, {
@@ -1266,8 +1266,8 @@ async function sendEmail(env, message) {
   };
 }
 
-function customerQuoteHtml(quote, items, paymentUrl) {
-  const downloadUrl = quoteDownloadUrl(quote);
+function customerQuoteHtml(env, quote, items, paymentUrl) {
+  const downloadUrl = quoteDownloadUrl(env, quote);
   const payCta = paymentUrl
     ? `<a href="${esc(paymentUrl)}" style="display:inline-block;background:#b01c2e;color:#fff;text-decoration:none;padding:12px 18px;border-radius:6px;font-weight:bold;margin:0 8px 8px 0;">Pay Now</a>`
     : '';
@@ -1292,8 +1292,8 @@ function customerQuoteHtml(quote, items, paymentUrl) {
   });
 }
 
-function customerQuoteText(quote, items, paymentUrl) {
-  const downloadUrl = quoteDownloadUrl(quote);
+function customerQuoteText(env, quote, items, paymentUrl) {
+  const downloadUrl = quoteDownloadUrl(env, quote);
   const sections = [
     'SKYE ACE HARDWARE | SCREEN TOOL',
     'QUOTE > PRODUCTION > READY > COMPLETE',
@@ -1681,16 +1681,6 @@ function quoteSummaryText(quote, items) {
   return lines.join('\n');
 }
 
-const FUTURE_BUSINESS_TILE_IMAGES = {
-  // Stable placeholders; replace with branded assets when production email image URLs are finalized.
-  knife_sharpening: 'https://placehold.co/72x72?text=Knife',
-  key_cutting: 'https://placehold.co/72x72?text=Key',
-  paint_help: 'https://placehold.co/72x72?text=Paint',
-  expert_help: 'https://placehold.co/72x72?text=Help',
-  special_orders_delivery: 'https://placehold.co/72x72?text=Delivery',
-  ace_rewards: 'https://placehold.co/72x72?text=Rewards'
-};
-
 function customerEmailShell({ statusStep, titleText, statusLabel, statusMessage, bodyHtml }) {
   return `
     <div style="font-family:Arial,sans-serif;line-height:1.45;color:#222;max-width:780px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;">
@@ -1775,12 +1765,12 @@ function storeAndTotalSummaryHtml(quote) {
 
 function futureBusinessTilesHtml() {
   const tiles = [
-    { key: 'knife_sharpening', label: 'Knife sharpening' },
-    { key: 'key_cutting', label: 'Key cutting' },
-    { key: 'paint_help', label: 'Paint and color help' },
-    { key: 'expert_help', label: 'Expert help' },
-    { key: 'special_orders_delivery', label: 'Special orders and delivery' },
-    { key: 'ace_rewards', label: 'ACE Rewards' }
+    { label: 'Knife sharpening', detail: 'Keep your tools performing at their best.' },
+    { label: 'Key cutting', detail: 'Fast duplication for home, office, and auto keys.' },
+    { label: 'Paint and color help', detail: 'Expert matching and in-store guidance.' },
+    { label: 'Expert help', detail: 'Project advice from your neighborhood team.' },
+    { label: 'Special orders and delivery', detail: 'Ask us about hard-to-find items and delivery options.' },
+    { label: 'ACE Rewards', detail: 'Earn points and access member-exclusive savings.' }
   ];
   const rowSize = 3;
   const rows = [];
@@ -1795,9 +1785,9 @@ function futureBusinessTilesHtml() {
         <tr>
           ${row.map((tile) => `
             <td style="width:33.33%;padding:8px;vertical-align:top;">
-              <div style="border:1px solid #ddd;border-radius:8px;padding:10px;text-align:center;height:100%;">
-                <img src="${esc(FUTURE_BUSINESS_TILE_IMAGES[tile.key])}" alt="${esc(tile.label)}" width="72" height="72" style="display:block;margin:0 auto 8px;border:0;" />
-                <div style="font-size:13px;font-weight:700;">${esc(tile.label)}</div>
+              <div style="border:1px solid #ddd;border-radius:8px;padding:12px 10px;text-align:left;height:100%;background:#fafafa;">
+                <div style="font-size:13px;font-weight:700;margin-bottom:6px;">${esc(tile.label)}</div>
+                <div style="font-size:12px;color:#444;line-height:1.4;">${esc(tile.detail)}</div>
               </div>
             </td>
           `).join('')}
@@ -1947,9 +1937,9 @@ function fulfillmentLabel(quote) {
   return fulfillment === 'delivery' ? 'Delivery' : 'Pickup';
 }
 
-function quoteDownloadUrl(quote) {
+function quoteDownloadUrl(env, quote) {
   if (!clean(quote && quote.view_token)) return '';
-  return 'https://screen-ordering-flow.nnelson.workers.dev/quote.html?token=' + encodeURIComponent(clean(quote.view_token));
+  return customerFormsBaseUrl(env) + '/quote?token=' + encodeURIComponent(clean(quote.view_token));
 }
 
 function paymentMethodLabel(method) {
@@ -2229,6 +2219,10 @@ function customerBase(request, env) {
 
 function vendorFormsBaseUrl(env) {
   return trim(env.VENDOR_FORMS_BASE_URL || 'https://screen-ordering-flow.nnelson.workers.dev');
+}
+
+function customerFormsBaseUrl(env) {
+  return trim(env.CUSTOMER_FORMS_BASE_URL || env.PUBLIC_APP_BASE_URL || 'https://screens.helpful.place');
 }
 
 function vendorPacketStatusAllowsAutoSend(status) {
