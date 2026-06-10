@@ -1716,14 +1716,14 @@ function lifecycleTrackerHtml(statusStep) {
     ready: 'Ready',
     complete: 'Complete'
   };
-  const currentIndex = Math.max(0, sequence.indexOf(clean(statusStep).toLowerCase()));
+  const currentIndex = sequence.indexOf(clean(statusStep).toLowerCase());
 
   return `
     <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin-bottom:16px;">
       <tr>
         ${sequence.map((step, index) => `
           <td style="text-align:center;padding:4px 2px;">
-            <div style="display:inline-block;min-width:88px;padding:6px 8px;border-radius:999px;border:1px solid ${index <= currentIndex ? '#b01c2e' : '#c8c8c8'};background:${index <= currentIndex ? '#b01c2e' : '#fff'};color:${index <= currentIndex ? '#fff' : '#555'};font-size:12px;font-weight:700;">${labels[step]}</div>
+            <div style="display:inline-block;min-width:88px;padding:6px 8px;border-radius:999px;border:1px solid ${currentIndex >= 0 && index <= currentIndex ? '#b01c2e' : '#c8c8c8'};background:${currentIndex >= 0 && index <= currentIndex ? '#b01c2e' : '#fff'};color:${currentIndex >= 0 && index <= currentIndex ? '#fff' : '#555'};font-size:12px;font-weight:700;">${labels[step]}</div>
           </td>
         `).join('')}
       </tr>
@@ -1960,7 +1960,10 @@ function paymentMethodLabel(method) {
 }
 
 function customerAddressLine(quote) {
-  const cityStateZip = [clean(quote.customer_city), clean(quote.customer_state), clean(quote.customer_zip)].filter(Boolean).join(' ');
+  const city = clean(quote.customer_city);
+  const state = clean(quote.customer_state);
+  const zip = clean(quote.customer_zip);
+  const cityStateZip = [city, [state, zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
   return [clean(quote.customer_street), cityStateZip].filter(Boolean).join(', ');
 }
 
