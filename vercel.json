@@ -3,6 +3,10 @@
   "trailingSlash": false,
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://screen-ordering-api.nnelson.workers.dev/api/:path*"
+    },
+    {
       "source": "/staff",
       "destination": "/staff.html"
     },
