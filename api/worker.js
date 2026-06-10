@@ -1140,9 +1140,9 @@ async function sendQuoteCreatedEmails(env, quote, items) {
   if (!env.RESEND_API_KEY) return { skipped: true, reason: 'RESEND_API_KEY not set' };
 
   const results = [];
-  const paymentUrl = quote.payment_url || '';
-  const customerSubject = 'Your Helpful ACE screen quote is ready';
-  const storeSubject = 'Screen quote created - ' + quote.customer_name;
+  const paymentUrl = clean(quote.payment_url || '');
+  const customerSubject = 'ACE Screen Quote Created - Action Required to Place Order';
+  const storeSubject = 'New Screen Quote Created - Customer Follow-Up Required';
 
   results.push(await sendEmail(env, {
     to: quote.customer_email,
@@ -1165,19 +1165,23 @@ async function sendPaymentReceivedEmails(env, quote, items) {
   if (!env.RESEND_API_KEY) return { skipped: true, reason: 'RESEND_API_KEY not set' };
 
   const results = [];
+  const packetTokenResult = await createOrReuseVendorPacketToken(env, quote);
+  const vendorFormsLink = packetTokenResult.ok
+    ? vendorFormsBaseUrl(env) + '/vendor-forms.html?packet_token=' + encodeURIComponent(packetTokenResult.token)
+    : '';
 
   results.push(await sendEmail(env, {
     to: quote.customer_email,
-    subject: 'Your Helpful ACE screen order has been received',
+    subject: 'Production Started - Your ACE Screen Order Is Now In Progress',
     html: paymentReceivedCustomerHtml(quote, items),
     text: paymentReceivedCustomerText(quote, items)
   }));
 
   results.push(await sendEmail(env, {
     to: quote.store_email,
-    subject: 'Paid screen order received - ' + quote.customer_name,
-    html: paidStoreNoticeHtml(quote, items),
-    text: paidStoreNoticeText(quote, items)
+    subject: 'Paid Screen Order - Production Started / Vendor Submission Required',
+    html: paidStoreNoticeHtml(quote, items, vendorFormsLink),
+    text: paidStoreNoticeText(quote, items, vendorFormsLink)
   }));
 
   return { attempted: true, results };
@@ -1190,21 +1194,17 @@ async function sendReadyEmails(env, quote, items) {
   const readyPhrase = fulfillment === 'delivery'
     ? 'ready for delivery scheduling'
     : 'ready for pickup';
+  const customerSubject = fulfillment === 'delivery'
+    ? 'Ready for Delivery Scheduling - Your ACE Screen Order Is Ready'
+    : 'Ready for Pickup - Your ACE Screen Order Is Ready';
 
   const results = [];
 
   results.push(await sendEmail(env, {
     to: quote.customer_email,
-    subject: 'Your Helpful ACE screen order is ready',
+    subject: customerSubject,
     html: readyCustomerHtml(quote, items, readyPhrase),
     text: readyCustomerText(quote, items, readyPhrase)
-  }));
-
-  results.push(await sendEmail(env, {
-    to: quote.store_email,
-    subject: 'Screen order ready - ' + quote.customer_name,
-    html: readyStoreHtml(quote, items, readyPhrase),
-    text: readyStoreText(quote, items, readyPhrase)
   }));
 
   return { attempted: true, results };
@@ -1217,14 +1217,14 @@ async function sendCompletedEmails(env, quote, items) {
 
   results.push(await sendEmail(env, {
     to: quote.customer_email,
-    subject: 'Your Helpful ACE screen order is complete',
+    subject: 'Thank You - Your ACE Screen Order Is Complete',
     html: completedCustomerHtml(quote, items),
     text: completedCustomerText(quote, items)
   }));
 
   results.push(await sendEmail(env, {
     to: quote.store_email,
-    subject: 'Screen order completed - ' + quote.customer_name,
+    subject: 'Screen Order Completed - ' + clean(quote.id) + ' - ' + clean(quote.customer_name),
     html: completedStoreHtml(quote, items),
     text: completedStoreText(quote, items)
   }));
@@ -1267,87 +1267,178 @@ async function sendEmail(env, message) {
 }
 
 function customerQuoteHtml(quote, items, paymentUrl) {
-  const quoteDownloadUrl =
-    'https://screen-ordering-flow.nnelson.workers.dev/quote.html?token=' +
-    encodeURIComponent(quote.view_token || '');
+  const downloadUrl = quoteDownloadUrl(quote);
+  const payCta = paymentUrl
+    ? `<a href="${esc(paymentUrl)}" style="display:inline-block;background:#b01c2e;color:#fff;text-decoration:none;padding:12px 18px;border-radius:6px;font-weight:bold;margin:0 8px 8px 0;">Pay Now</a>`
+    : '';
+  const downloadCta = downloadUrl
+    ? `<a href="${esc(downloadUrl)}" style="display:inline-block;background:#333;color:#fff;text-decoration:none;padding:12px 18px;border-radius:6px;font-weight:bold;margin:0 8px 8px 0;">View / Download Quote</a>`
+    : '';
 
-  return emailShell('Your screen quote is ready', `
-    <p>Your Screen Quote has been created, but not yet placed.</p>
-    <p>Please review the details below for accuracy. When ready, you can pay securely online, download a copy of your quote, or visit the store to make payment and complete your order.</p>
-    <p>
-      <a href="${esc(paymentUrl)}" style="display:inline-block;background:#b01c2e;color:#fff;text-decoration:none;padding:12px 18px;border-radius:6px;font-weight:bold;margin:0 8px 8px 0;">Pay Here</a>
-      <a href="${esc(quoteDownloadUrl)}" style="display:inline-block;background:#333;color:#fff;text-decoration:none;padding:12px 18px;border-radius:6px;font-weight:bold;margin:0 8px 8px 0;">Download Your Quote</a>
-    </p>
-    ${quoteSummaryHtml(quote, items)}
-    <p>Once payment is received, production on your order will begin and will no longer be able to be cancelled or modified.</p>
-  `);
+  return customerEmailShell({
+    statusStep: 'quote',
+    titleText: 'Quote Created',
+    statusLabel: 'QUOTE CREATED',
+    statusMessage: 'Action required to place your order',
+    bodyHtml: `
+      <p>Your screen quote has been created, but your order has not been placed yet.</p>
+      <p>Please review your quote for accuracy. When everything looks correct, you can pay online or visit your selected store to place the order.</p>
+      <p>${payCta}${downloadCta}</p>
+      <p><strong>Important:</strong> Production does not begin until payment is received. Once payment is received, your custom order will move into production and may no longer be edited or cancelled.</p>
+      ${customerOrderInfoHtml(quote, { includeValidity: true })}
+      ${storeAndTotalSummaryHtml(quote)}
+      ${screenSummaryHtml(items)}
+    `
+  });
 }
 
 function customerQuoteText(quote, items, paymentUrl) {
-  const quoteDownloadUrl =
-    'https://screen-ordering-flow.nnelson.workers.dev/quote.html?token=' +
-    encodeURIComponent(quote.view_token || '');
+  const downloadUrl = quoteDownloadUrl(quote);
+  const sections = [
+    'SKYE ACE HARDWARE | SCREEN TOOL',
+    'QUOTE > PRODUCTION > READY > COMPLETE',
+    'QUOTE CREATED - Action required to place your order',
+    '',
+    'Your screen quote has been created, but your order has not been placed yet.',
+    'Please review your quote for accuracy. When everything looks correct, you can pay online or visit your selected store to place the order.'
+  ];
 
-  return [
-    'Your Screen Quote has been created, but not yet placed.',
+  if (paymentUrl) {
+    sections.push('', 'Pay now:', paymentUrl);
+  }
+
+  if (downloadUrl) {
+    sections.push('', 'View / Download quote:', downloadUrl);
+  }
+
+  sections.push(
     '',
-    'Review the details of your order for accuracy, then pay here:',
-    paymentUrl,
+    'Important: Production does not begin until payment is received. Once payment is received, your custom order will move into production and may no longer be edited or cancelled.',
     '',
-    'Download your quote here:',
-    quoteDownloadUrl,
+    customerOrderInfoText(quote, { includeValidity: true }),
     '',
-    quoteSummaryText(quote, items),
+    storeAndTotalSummaryText(quote),
     '',
-    'Once payment is received, production on your order will begin and will no longer be able to be cancelled or modified.'
-  ].join('\n');
+    screenSummaryText(items)
+  );
+
+  return sections.join('\n');
 }
 
 function storeQuoteCreatedHtml(quote, items) {
-  return emailShell('Screen quote created', `
-    <p>A customer has built a screen quote. This is not a paid order yet.</p>
-    ${quoteSummaryHtml(quote, items)}
+  return operationalStoreEmailShell('NEW SCREEN QUOTE CREATED', `
+    <p><strong>Customer follow-up required if not paid within 2 days.</strong></p>
+    <p>A customer screen quote has been created. If the customer has not yet paid on their own, a store representative must make contact within 2 days to ensure the customer does not require assistance or have any questions.</p>
+    <p>Do not begin production until the quote is accepted and paid for.</p>
+    ${customerSearchDetailsHtml(quote)}
+    ${orderDetailsHtml(quote, { includePaymentMethod: true })}
+    <p><strong>Next steps:</strong></p>
+    <ol>
+      <li>Watch for payment or dashboard status change.</li>
+      <li>If unpaid after 2 days, contact the customer.</li>
+      <li>Answer questions or assist with order placement.</li>
+      <li>Do not submit vendor forms until the order is paid/in production.</li>
+    </ol>
   `);
 }
 
 function storeQuoteCreatedText(quote, items) {
   return [
-    'A customer has built a screen quote. This is not a paid order yet.',
+    'NEW SCREEN QUOTE CREATED',
+    'Customer follow-up required if not paid within 2 days',
     '',
-    quoteSummaryText(quote, items)
+    'A customer screen quote has been created. If the customer has not yet paid on their own, a store representative must make contact within 2 days to ensure the customer does not require assistance or have any questions.',
+    'Do not begin production until the quote is accepted and paid for.',
+    '',
+    customerSearchDetailsText(quote),
+    '',
+    orderDetailsText(quote, { includePaymentMethod: true }),
+    '',
+    'Next steps:',
+    '1. Watch for payment or dashboard status change.',
+    '2. If unpaid after 2 days, contact the customer.',
+    '3. Answer questions or assist with order placement.',
+    '4. Do not submit vendor forms until the order is paid/in production.'
   ].join('\n');
 }
 
 function paymentReceivedCustomerHtml(quote, items) {
-  return emailShell('Your screen order has been received', `
-    <p>Your order has been received and production will begin immediately.</p>
-    <p>Because production is beginning, the order can no longer be cancelled or modified.</p>
-    ${quoteSummaryHtml(quote, items)}
-  `);
+  return customerEmailShell({
+    statusStep: 'production',
+    titleText: 'Production Started',
+    statusLabel: 'PRODUCTION STARTED',
+    statusMessage: 'Your custom order is now in progress',
+    bodyHtml: `
+      <p>Payment has been received. Your custom screen order has moved into production.</p>
+      <p><strong>Because this is a custom-made order, it can no longer be edited, cancelled, or returned from this point forward.</strong></p>
+      <p>Your selected store and vendor production process are now underway. We will notify you when your order is ready for pickup or delivery scheduling.</p>
+      ${customerOrderInfoHtml(quote)}
+      ${storeAndTotalSummaryHtml(quote)}
+      ${screenSummaryHtml(items)}
+    `
+  });
 }
 
 function paymentReceivedCustomerText(quote, items) {
   return [
-    'Your order has been received and production will begin immediately.',
-    'Because production is beginning, the order can no longer be cancelled or modified.',
+    'SKYE ACE HARDWARE | SCREEN TOOL',
+    'QUOTE > PRODUCTION > READY > COMPLETE',
+    'PRODUCTION STARTED - Your custom order is now in progress',
     '',
-    quoteSummaryText(quote, items)
+    'Payment has been received. Your custom screen order has moved into production.',
+    'Because this is a custom-made order, it can no longer be edited, cancelled, or returned from this point forward.',
+    'Your selected store and vendor production process are now underway. We will notify you when your order is ready for pickup or delivery scheduling.',
+    '',
+    customerOrderInfoText(quote),
+    '',
+    storeAndTotalSummaryText(quote),
+    '',
+    screenSummaryText(items)
   ].join('\n');
 }
 
-function paidStoreNoticeHtml(quote, items) {
-  return emailShell('Paid screen order received', `
-    <p>A screen order has been paid. Vendor form generation and customer quote PDF attachment are the next integration step.</p>
-    ${quoteSummaryHtml(quote, items)}
+function paidStoreNoticeHtml(quote, items, vendorFormsLink) {
+  const vendorLinkHtml = vendorFormsLink
+    ? `<p><a href="${esc(vendorFormsLink)}" style="color:#0b57d0;">Open vendor forms</a></p>`
+    : '<p>Vendor forms link unavailable. Open the dashboard order and generate forms manually.</p>';
+
+  return operationalStoreEmailShell('PAID SCREEN ORDER - PRODUCTION STARTED', `
+    <p><strong>Vendor submission required.</strong></p>
+    <p>A customer quote has been accepted and paid for.</p>
+    <p><strong>Action required:</strong></p>
+    <ol>
+      <li>Use the link in this email to generate/open vendor forms.</li>
+      <li>Validate the order matches the dashboard.</li>
+      <li>Submit the order to the vendor.</li>
+      <li>Update submission status in the dashboard.</li>
+      <li>If online payment was made, process through POS to record the sale in Business Advisor.</li>
+    </ol>
+    ${vendorLinkHtml}
+    ${customerSearchDetailsHtml(quote)}
+    ${orderDetailsHtml(quote, { includePaymentMethod: true })}
   `);
 }
 
-function paidStoreNoticeText(quote, items) {
+function paidStoreNoticeText(quote, items, vendorFormsLink) {
   return [
-    'A screen order has been paid.',
-    'Vendor form generation and customer quote PDF attachment are the next integration step.',
+    'PAID SCREEN ORDER - PRODUCTION STARTED',
+    'Vendor submission required',
     '',
-    quoteSummaryText(quote, items)
+    'A customer quote has been accepted and paid for.',
+    '',
+    'Action required:',
+    '1. Use the link in this email to generate/open vendor forms.',
+    '2. Validate the order matches the dashboard.',
+    '3. Submit the order to the vendor.',
+    '4. Update submission status in the dashboard.',
+    '5. If online payment was made, process through POS to record the sale in Business Advisor.',
+    '',
+    'Open vendor forms:',
+    vendorFormsLink || 'Vendor forms link unavailable. Open the dashboard order and generate forms manually.',
+    '',
+    customerSearchDetailsText(quote),
+    '',
+    orderDetailsText(quote, { includePaymentMethod: true })
   ].join('\n');
 }
 
@@ -1380,66 +1471,112 @@ function vendorPacketText(quote, items, link) {
 }
 
 function readyCustomerHtml(quote, items, readyPhrase) {
-  return emailShell('Your screen order is ready', `
-    <p>Your screen order is ${esc(readyPhrase)}.</p>
-    <p>Please contact or visit ${esc(quote.store_name)} with any questions.</p>
-    ${quoteSummaryHtml(quote, items)}
-  `);
+  const fulfillment = clean(quote.fulfillment_method || 'pickup').toLowerCase();
+  const isDelivery = fulfillment === 'delivery';
+  const titleText = isDelivery ? 'Ready for Delivery Scheduling' : 'Ready for Pickup';
+  const statusLabel = isDelivery ? 'READY FOR DELIVERY SCHEDULING' : 'READY FOR PICKUP';
+  const statusMessage = isDelivery
+    ? 'Your screen order is ready'
+    : 'Your screen order is ready at your selected store';
+  const nextStepHtml = isDelivery
+    ? '<p>Your selected store will contact you soon to schedule delivery of your order.</p>'
+    : '<p>Please visit your selected store when convenient. Bring your quote ID or a copy of this email so the team can quickly locate your order.</p>';
+
+  return customerEmailShell({
+    statusStep: 'ready',
+    titleText,
+    statusLabel,
+    statusMessage,
+    bodyHtml: `
+      <p>Your custom screen order is ${esc(readyPhrase)}.</p>
+      ${nextStepHtml}
+      ${customerOrderInfoHtml(quote)}
+      ${storeAndTotalSummaryHtml(quote)}
+      ${screenSummaryHtml(items)}
+    `
+  });
 }
 
 function readyCustomerText(quote, items, readyPhrase) {
+  const fulfillment = clean(quote.fulfillment_method || 'pickup').toLowerCase();
+  const isDelivery = fulfillment === 'delivery';
   return [
-    'Your screen order is ' + readyPhrase + '.',
-    'Please contact or visit ' + quote.store_name + ' with any questions.',
+    'SKYE ACE HARDWARE | SCREEN TOOL',
+    'QUOTE > PRODUCTION > READY > COMPLETE',
+    (isDelivery ? 'READY FOR DELIVERY SCHEDULING' : 'READY FOR PICKUP') + ' - Your screen order is ready',
     '',
-    quoteSummaryText(quote, items)
-  ].join('\n');
-}
-
-function readyStoreHtml(quote, items, readyPhrase) {
-  return emailShell('Screen order ready', `
-    <p>This order was marked ${esc(readyPhrase)}.</p>
-    ${quoteSummaryHtml(quote, items)}
-  `);
-}
-
-function readyStoreText(quote, items, readyPhrase) {
-  return [
-    'This order was marked ' + readyPhrase + '.',
+    'Your custom screen order is ' + readyPhrase + '.',
+    isDelivery
+      ? 'Your selected store will contact you soon to schedule delivery of your order.'
+      : 'Please visit your selected store when convenient. Bring your quote ID or a copy of this email so the team can quickly locate your order.',
     '',
-    quoteSummaryText(quote, items)
+    customerOrderInfoText(quote),
+    '',
+    storeAndTotalSummaryText(quote),
+    '',
+    screenSummaryText(items)
   ].join('\n');
 }
 
 function completedCustomerHtml(quote, items) {
-  return emailShell('Your screen order is complete', `
-    <p>Your screen order has been completed. Thank you for shopping SKYE ACE Hardware.</p>
-    <p>Please keep this quote information. If you need new screens in the future, we can use this record to help build your next quote faster.</p>
-    ${quoteSummaryHtml(quote, items)}
-  `);
+  return customerEmailShell({
+    statusStep: 'complete',
+    titleText: 'Order Complete',
+    statusLabel: 'ORDER COMPLETE',
+    statusMessage: 'Thank you for your business',
+    bodyHtml: `
+      <p>Your screen order has been completed.</p>
+      <p>Thank you for trusting Helpful ACE Hardware. We value you as a customer and neighbor.</p>
+      <p>We keep your invoice and order information on file. If you ever need to replace a screen you previously purchased, we can use your order history to make the repeat process easier.</p>
+      ${customerOrderInfoHtml(quote)}
+      ${storeAndTotalSummaryHtml(quote)}
+      ${futureBusinessTilesHtml()}
+    `
+  });
 }
 
 function completedCustomerText(quote, items) {
   return [
-    'Your screen order has been completed. Thank you for shopping SKYE ACE Hardware.',
-    'Please keep this quote information. If you need new screens in the future, we can use this record to help build your next quote faster.',
+    'SKYE ACE HARDWARE | SCREEN TOOL',
+    'QUOTE > PRODUCTION > READY > COMPLETE',
+    'ORDER COMPLETE - Thank you for your business',
     '',
-    quoteSummaryText(quote, items)
+    'Your screen order has been completed.',
+    'Thank you for trusting Helpful ACE Hardware. We value you as a customer and neighbor.',
+    'We keep your invoice and order information on file. If you ever need to replace a screen you previously purchased, we can use your order history to make the repeat process easier.',
+    '',
+    customerOrderInfoText(quote),
+    '',
+    storeAndTotalSummaryText(quote),
+    '',
+    'Think of us for:',
+    '- Knife sharpening',
+    '- Key cutting',
+    '- Paint and color help',
+    '- Expert help',
+    '- Special orders and delivery',
+    '- ACE Rewards'
   ].join('\n');
 }
 
 function completedStoreHtml(quote, items) {
-  return emailShell('Screen order completed', `
-    <p>This order was marked completed.</p>
-    ${quoteSummaryHtml(quote, items)}
+  return operationalStoreEmailShell('SCREEN ORDER COMPLETED', `
+    <p>Order ${esc(quote.id)} has been marked as completed in the dashboard.</p>
+    <p>No further store action is required from this email.</p>
+    ${customerSearchDetailsHtml(quote)}
+    ${orderDetailsHtml(quote)}
   `);
 }
 
 function completedStoreText(quote, items) {
   return [
-    'This order was marked completed.',
+    'SCREEN ORDER COMPLETED',
+    'Order ' + clean(quote.id) + ' has been marked as completed in the dashboard.',
+    'No further store action is required from this email.',
     '',
-    quoteSummaryText(quote, items)
+    customerSearchDetailsText(quote),
+    '',
+    orderDetailsText(quote)
   ].join('\n');
 }
 
@@ -1543,13 +1680,288 @@ function quoteSummaryText(quote, items) {
 
   return lines.join('\n');
 }
-function emailShell(titleText, bodyHtml) {
+
+const FUTURE_BUSINESS_TILE_IMAGES = {
+  knife_sharpening: 'https://placehold.co/96x96?text=Knife',
+  key_cutting: 'https://placehold.co/96x96?text=Key',
+  paint_help: 'https://placehold.co/96x96?text=Paint',
+  expert_help: 'https://placehold.co/96x96?text=Help',
+  special_orders_delivery: 'https://placehold.co/96x96?text=Delivery',
+  ace_rewards: 'https://placehold.co/96x96?text=Rewards'
+};
+
+function customerEmailShell({ statusStep, titleText, statusLabel, statusMessage, bodyHtml }) {
+  return `
+    <div style="font-family:Arial,sans-serif;line-height:1.45;color:#222;max-width:780px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;">
+      <div style="background:#b01c2e;color:#fff;padding:14px 20px;">
+        <div style="font-size:20px;font-weight:700;letter-spacing:0.2px;">SKYE ACE Hardware</div>
+        <div style="font-size:13px;opacity:0.95;">Custom Window &amp; Door Screen Tool</div>
+      </div>
+      <div style="padding:18px 20px 24px;">
+        ${lifecycleTrackerHtml(statusStep)}
+        <h2 style="margin:8px 0 6px;color:#b01c2e;">${esc(titleText)}</h2>
+        ${statusBannerHtml(statusLabel, statusMessage)}
+        ${bodyHtml}
+      </div>
+    </div>
+  `;
+}
+
+function lifecycleTrackerHtml(statusStep) {
+  const sequence = ['quote', 'production', 'ready', 'complete'];
+  const labels = {
+    quote: 'Quote',
+    production: 'Production',
+    ready: 'Ready',
+    complete: 'Complete'
+  };
+  const currentIndex = Math.max(0, sequence.indexOf(clean(statusStep).toLowerCase()));
+
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin-bottom:16px;">
+      <tr>
+        ${sequence.map((step, index) => `
+          <td style="text-align:center;padding:4px 2px;">
+            <div style="display:inline-block;min-width:88px;padding:6px 8px;border-radius:999px;border:1px solid ${index <= currentIndex ? '#b01c2e' : '#c8c8c8'};background:${index <= currentIndex ? '#b01c2e' : '#fff'};color:${index <= currentIndex ? '#fff' : '#555'};font-size:12px;font-weight:700;">${labels[step]}</div>
+          </td>
+        `).join('')}
+      </tr>
+    </table>
+  `;
+}
+
+function statusBannerHtml(label, message) {
+  return `
+    <div style="background:#b01c2e;color:#fff;padding:14px 16px;border-radius:8px;margin:10px 0 16px;">
+      <div style="font-size:18px;font-weight:700;letter-spacing:0.4px;">${esc(label)}</div>
+      <div style="font-size:15px;margin-top:4px;">${esc(message)}</div>
+    </div>
+  `;
+}
+
+function customerOrderInfoHtml(quote, options = {}) {
+  const details = [
+    `<strong>Quote ID:</strong> ${esc(quote.id)}`,
+    `<strong>Status:</strong> ${esc(quote.status)}`,
+    `<strong>Fulfillment:</strong> ${esc(fulfillmentLabel(quote))}`
+  ];
+
+  if (options.includeValidity && clean(quote.validity_expires_at)) {
+    details.push(`<strong>Valid through:</strong> ${esc(dateLabel(quote.validity_expires_at))}`);
+  }
+
+  return `
+    <h3 style="margin:16px 0 8px;">Order Information</h3>
+    <p>${details.join('<br>')}</p>
+  `;
+}
+
+function storeAndTotalSummaryHtml(quote) {
+  return `
+    <h3 style="margin:16px 0 8px;">Selected Store</h3>
+    <p>${esc(quote.store_name)}<br>${esc(quote.store_phone || '')}<br>${esc(quote.store_email || '')}</p>
+    <h3 style="margin:16px 0 8px;">Total Summary</h3>
+    <table cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:320px;max-width:100%;font-size:14px;margin-bottom:8px;">
+      <tbody>
+        <tr><td style="border-bottom:1px solid #ddd;">Subtotal</td><td style="border-bottom:1px solid #ddd;text-align:right;">${money(quote.subtotal_cents)}</td></tr>
+        <tr><td style="border-bottom:1px solid #ddd;">Tax</td><td style="border-bottom:1px solid #ddd;text-align:right;">${money(quote.tax_cents)}</td></tr>
+        <tr><td style="border-bottom:1px solid #ddd;">Delivery</td><td style="border-bottom:1px solid #ddd;text-align:right;">${money(quote.delivery_cents)}</td></tr>
+        <tr><td style="font-weight:bold;">Total</td><td style="font-weight:bold;text-align:right;">${money(quote.total_cents)}</td></tr>
+      </tbody>
+    </table>
+  `;
+}
+
+function futureBusinessTilesHtml() {
+  const tiles = [
+    { key: 'knife_sharpening', label: 'Knife sharpening' },
+    { key: 'key_cutting', label: 'Key cutting' },
+    { key: 'paint_help', label: 'Paint and color help' },
+    { key: 'expert_help', label: 'Expert help' },
+    { key: 'special_orders_delivery', label: 'Special orders and delivery' },
+    { key: 'ace_rewards', label: 'ACE Rewards' }
+  ];
+
+  return `
+    <h3 style="margin:16px 0 8px;">Think of us for...</h3>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
+      <tr>
+        ${tiles.map((tile) => `
+          <td style="width:33.33%;padding:8px;vertical-align:top;">
+            <div style="border:1px solid #ddd;border-radius:8px;padding:10px;text-align:center;height:100%;">
+              <img src="${esc(FUTURE_BUSINESS_TILE_IMAGES[tile.key])}" alt="${esc(tile.label)}" width="72" height="72" style="display:block;margin:0 auto 8px;border:0;" />
+              <div style="font-size:13px;font-weight:700;">${esc(tile.label)}</div>
+            </div>
+          </td>
+        `).join('')}
+      </tr>
+    </table>
+  `;
+}
+
+function operationalStoreEmailShell(titleText, bodyHtml) {
   return `
     <div style="font-family:Arial,sans-serif;line-height:1.45;color:#222;max-width:780px;margin:0 auto;">
-      <h2 style="color:#b01c2e;">${esc(titleText)}</h2>
+      <h2>${esc(titleText)}</h2>
       ${bodyHtml}
     </div>
   `;
+}
+
+function emailShell(titleText, bodyHtml) {
+  return operationalStoreEmailShell(titleText, bodyHtml);
+}
+
+function customerSearchDetailsHtml(quote) {
+  return `
+    <h3 style="margin:16px 0 8px;">Customer / Search Details</h3>
+    <p><strong>Customer:</strong> ${esc(quote.customer_name)}<br><strong>Phone:</strong> ${esc(quote.customer_phone)}<br><strong>Email:</strong> ${esc(quote.customer_email)}<br><strong>Address:</strong> ${esc(customerAddressLine(quote))}<br><strong>Quote ID:</strong> ${esc(quote.id)}</p>
+  `;
+}
+
+function customerSearchDetailsText(quote) {
+  return [
+    'Customer/search details:',
+    'Customer: ' + clean(quote.customer_name),
+    'Phone: ' + clean(quote.customer_phone),
+    'Email: ' + clean(quote.customer_email),
+    'Address: ' + customerAddressLine(quote),
+    'Quote ID: ' + clean(quote.id)
+  ].join('\n');
+}
+
+function orderDetailsHtml(quote, options = {}) {
+  const rows = [
+    '<strong>Quote ID:</strong> ' + esc(quote.id),
+    '<strong>Status:</strong> ' + esc(quote.status),
+    '<strong>Fulfillment:</strong> ' + esc(fulfillmentLabel(quote)),
+    '<strong>Total:</strong> ' + esc(money(quote.total_cents)),
+    '<strong>Selected store:</strong> ' + esc(quote.store_name)
+  ];
+
+  if (options.includePaymentMethod) {
+    rows.push('<strong>Payment method:</strong> ' + esc(paymentMethodLabel(quote.payment_method)));
+  }
+
+  return `
+    <h3 style="margin:16px 0 8px;">Order Details</h3>
+    <p>${rows.join('<br>')}</p>
+  `;
+}
+
+function orderDetailsText(quote, options = {}) {
+  const lines = [
+    'Order details:',
+    'Quote ID: ' + clean(quote.id),
+    'Status: ' + clean(quote.status),
+    'Fulfillment: ' + fulfillmentLabel(quote),
+    'Total: ' + money(quote.total_cents),
+    'Selected store: ' + clean(quote.store_name)
+  ];
+
+  if (options.includePaymentMethod) {
+    lines.push('Payment method: ' + paymentMethodLabel(quote.payment_method));
+  }
+
+  return lines.join('\n');
+}
+
+function customerOrderInfoText(quote, options = {}) {
+  const lines = [
+    'Order information:',
+    'Quote ID: ' + clean(quote.id),
+    'Status: ' + clean(quote.status),
+    'Fulfillment: ' + fulfillmentLabel(quote)
+  ];
+
+  if (options.includeValidity && clean(quote.validity_expires_at)) {
+    lines.push('Valid through: ' + dateLabel(quote.validity_expires_at));
+  }
+
+  return lines.join('\n');
+}
+
+function storeAndTotalSummaryText(quote) {
+  return [
+    'Selected store:',
+    clean(quote.store_name),
+    clean(quote.store_phone),
+    clean(quote.store_email),
+    '',
+    'Total summary:',
+    'Subtotal: ' + money(quote.subtotal_cents),
+    'Tax: ' + money(quote.tax_cents),
+    'Delivery: ' + money(quote.delivery_cents),
+    'Total: ' + money(quote.total_cents)
+  ].join('\n');
+}
+
+function screenSummaryHtml(items) {
+  const rows = items.map((item, index) => `
+    <tr>
+      <td style="border-bottom:1px solid #eee;padding:6px 4px;">${index + 1}</td>
+      <td style="border-bottom:1px solid #eee;padding:6px 4px;">${esc(title(item.type))}</td>
+      <td style="border-bottom:1px solid #eee;padding:6px 4px;">${esc(item.qty)}</td>
+      <td style="border-bottom:1px solid #eee;padding:6px 4px;">${esc(item.width_display)} x ${esc(item.height_display)}</td>
+      <td style="border-bottom:1px solid #eee;padding:6px 4px;text-align:right;">${money(item.line_total_cents)}</td>
+    </tr>
+  `).join('');
+
+  return `
+    <h3 style="margin:16px 0 8px;">Screens</h3>
+    <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:14px;">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:6px 4px;border-bottom:1px solid #ddd;">#</th>
+          <th style="text-align:left;padding:6px 4px;border-bottom:1px solid #ddd;">Type</th>
+          <th style="text-align:left;padding:6px 4px;border-bottom:1px solid #ddd;">Qty</th>
+          <th style="text-align:left;padding:6px 4px;border-bottom:1px solid #ddd;">Size</th>
+          <th style="text-align:right;padding:6px 4px;border-bottom:1px solid #ddd;">Line</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function screenSummaryText(items) {
+  const lines = ['Screens:'];
+  items.forEach((item, index) => {
+    lines.push(
+      `${index + 1}. ${title(item.type)} | Qty ${item.qty} | ${item.width_display} x ${item.height_display} | ${money(item.line_total_cents)}`
+    );
+  });
+  return lines.join('\n');
+}
+
+function fulfillmentLabel(quote) {
+  const fulfillment = clean(quote && quote.fulfillment_method ? quote.fulfillment_method : 'pickup').toLowerCase();
+  return fulfillment === 'delivery' ? 'Delivery' : 'Pickup';
+}
+
+function quoteDownloadUrl(quote) {
+  if (!clean(quote && quote.view_token)) return '';
+  return 'https://screen-ordering-flow.nnelson.workers.dev/quote.html?token=' + encodeURIComponent(clean(quote.view_token));
+}
+
+function paymentMethodLabel(method) {
+  const normalized = clean(method).toLowerCase();
+  if (normalized === 'stripe' || normalized === 'online') return 'online';
+  if (normalized === 'in_store') return 'in_store';
+  return normalized || 'unknown';
+}
+
+function customerAddressLine(quote) {
+  const cityStateZip = [clean(quote.customer_city), clean(quote.customer_state), clean(quote.customer_zip)].filter(Boolean).join(' ');
+  return [clean(quote.customer_street), cityStateZip].filter(Boolean).join(', ');
+}
+
+function dateLabel(value) {
+  const raw = clean(value);
+  if (!raw) return '';
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return raw;
+  return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function envStatus(env) {
