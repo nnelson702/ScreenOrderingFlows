@@ -1167,7 +1167,9 @@ async function sendPaymentReceivedEmails(env, quote, items) {
   const results = [];
   const packetTokenResult = await createOrReuseVendorPacketToken(env, quote);
   if (packetTokenResult.ok && packetTokenResult.quote) {
-    Object.assign(quote, packetTokenResult.quote);
+    quote.vendor_packet_token = packetTokenResult.quote.vendor_packet_token;
+    quote.vendor_packet_token_hash = packetTokenResult.quote.vendor_packet_token_hash;
+    quote.vendor_packet_token_created_at = packetTokenResult.quote.vendor_packet_token_created_at;
   }
   const vendorFormsLink = packetTokenResult.ok
     ? vendorFormsBaseUrl(env) + '/vendor-forms.html?packet_token=' + encodeURIComponent(packetTokenResult.token)
