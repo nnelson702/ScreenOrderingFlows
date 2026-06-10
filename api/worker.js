@@ -1682,12 +1682,13 @@ function quoteSummaryText(quote, items) {
 }
 
 const FUTURE_BUSINESS_TILE_IMAGES = {
-  knife_sharpening: 'https://placehold.co/96x96?text=Knife',
-  key_cutting: 'https://placehold.co/96x96?text=Key',
-  paint_help: 'https://placehold.co/96x96?text=Paint',
-  expert_help: 'https://placehold.co/96x96?text=Help',
-  special_orders_delivery: 'https://placehold.co/96x96?text=Delivery',
-  ace_rewards: 'https://placehold.co/96x96?text=Rewards'
+  // Stable placeholders; replace with branded assets when production email image URLs are finalized.
+  knife_sharpening: 'https://placehold.co/72x72?text=Knife',
+  key_cutting: 'https://placehold.co/72x72?text=Key',
+  paint_help: 'https://placehold.co/72x72?text=Paint',
+  expert_help: 'https://placehold.co/72x72?text=Help',
+  special_orders_delivery: 'https://placehold.co/72x72?text=Delivery',
+  ace_rewards: 'https://placehold.co/72x72?text=Rewards'
 };
 
 function customerEmailShell({ statusStep, titleText, statusLabel, statusMessage, bodyHtml }) {
