@@ -1781,20 +1781,27 @@ function futureBusinessTilesHtml() {
     { key: 'special_orders_delivery', label: 'Special orders and delivery' },
     { key: 'ace_rewards', label: 'ACE Rewards' }
   ];
+  const rowSize = 3;
+  const rows = [];
+  for (let i = 0; i < tiles.length; i += rowSize) {
+    rows.push(tiles.slice(i, i + rowSize));
+  }
 
   return `
     <h3 style="margin:16px 0 8px;">Think of us for...</h3>
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
-      <tr>
-        ${tiles.map((tile) => `
-          <td style="width:33.33%;padding:8px;vertical-align:top;">
-            <div style="border:1px solid #ddd;border-radius:8px;padding:10px;text-align:center;height:100%;">
-              <img src="${esc(FUTURE_BUSINESS_TILE_IMAGES[tile.key])}" alt="${esc(tile.label)}" width="72" height="72" style="display:block;margin:0 auto 8px;border:0;" />
-              <div style="font-size:13px;font-weight:700;">${esc(tile.label)}</div>
-            </div>
-          </td>
-        `).join('')}
-      </tr>
+      ${rows.map((row) => `
+        <tr>
+          ${row.map((tile) => `
+            <td style="width:33.33%;padding:8px;vertical-align:top;">
+              <div style="border:1px solid #ddd;border-radius:8px;padding:10px;text-align:center;height:100%;">
+                <img src="${esc(FUTURE_BUSINESS_TILE_IMAGES[tile.key])}" alt="${esc(tile.label)}" width="72" height="72" style="display:block;margin:0 auto 8px;border:0;" />
+                <div style="font-size:13px;font-weight:700;">${esc(tile.label)}</div>
+              </div>
+            </td>
+          `).join('')}
+        </tr>
+      `).join('')}
     </table>
   `;
 }
