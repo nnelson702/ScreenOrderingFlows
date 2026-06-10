@@ -4,6 +4,7 @@
   const FRAME_OPTIONS=['5/16 X 3/4','5/16 X 1','3/8 X 3/4','7/16 X 3/4','7/16 X 1','3/4 STANDOFF','3/4 KE','INV KE'];
   const MATERIAL_OPTIONS=['FIBERGLASS','ALUMINUM','PET SCREEN','SOLAR 70','SUNTEX 80%','SUNTEX 90%','SUPER SOLAR 90'];
   const SAFE_STATUSES=['in_production','ready','completed'];
+  const KNOWN_COLORS=['white','black','bronze','champagne','almond','charcoal','gray','grey','brown','tan'];
 
   function safe(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;')}
   function norm(v){return String(v??'').toLowerCase().replace(/&quot;/g,'').replace(/["']/g,'').replace(/[_\-]+/g,' ').replace(/\s+/g,' ').trim()}
@@ -16,6 +17,36 @@
     const c=compact(value);
     return options.find(o=>compact(o)===c)||options.find(o=>c.includes(compact(o))||compact(o).includes(c))||'';
   }
+
+  function normalizeColor(value){
+    const n=norm(value);
+    if(!n)return '';
+    if(n==='grey')return 'GRAY';
+    return upper(n);
+  }
+
+  function colorFromText(value){
+    const raw=String(value??'');
+    if(!raw.trim())return '';
+    const slashParts=raw.split('/').map(p=>norm(p)).filter(Boolean);
+    if(slashParts.length>1){
+      const last=slashParts[slashParts.length-1];
+      const direct=KNOWN_COLORS.find(c=>last===c||last.includes(c));
+      if(direct)return normalizeColor(direct);
+    }
+    const n=norm(raw);
+    const found=KNOWN_COLORS.find(c=>new RegExp('(^|\\s)'+c+'(\\s|$)').test(n));
+    return found?normalizeColor(found):'';
+  }
+
+  function itemColor(item,explicitField,typeField){
+    const explicit=normalizeColor(item&&item[explicitField]);
+    if(explicit)return explicit;
+    return colorFromText(item&&item[typeField])||colorFromText(item&&item.description)||'';
+  }
+
+  function frameColorValue(item){return itemColor(item,'frame_color','frame_type')}
+  function materialColorValue(item){return itemColor(item,'material_color','material_type')}
 
   function materialOption(value){
     const n=norm(value);
@@ -85,9 +116,9 @@
   function pageGroupKey(item){
     return [
       frameOption(item.frame_type)||item.frame_type,
-      upper(item.frame_color),
+      upper(frameColorValue(item)),
       materialOption(item.material_type)||item.material_type,
-      upper(item.material_color),
+      upper(materialColorValue(item)),
       normalizeCut(item.frame_cut_type),
       spreaderChoice(item)
     ].map(v=>String(v??'')).join('|');
@@ -172,7 +203,9 @@
   function renderPage(quote,page,index,totalPages,totalQty){
     const p=page.prototype||{};
     const frame=frameOption(p.frame_type)||upper(p.frame_type);
+    const frameColor=frameColorValue(p);
     const material=materialOption(p.material_type)||upper(p.material_type);
+    const materialColor=materialColorValue(p);
     const cut=normalizeCut(p.frame_cut_type);
     const spreader=spreaderChoice(p);
     const orderId=quote.vendor_order_number||quote.sales_order_number||quote.order_number||quote.id||'';
@@ -182,8 +215,8 @@
       '<h1>SCREEN ORDER FORM</h1><div class="pg">PG <span>'+index+'</span> OF <span>'+totalPages+'</span></div>'+
       '<table class="meta"><tr><td class="label">DEALER:</td><td>'+safe(quote.store_name||'Skye ACE Hardware')+'</td><td class="label">DATE:</td><td>'+safe(displayDate())+'</td><td class="branch">WILL CALL</td><td class="branch">EAST</td></tr><tr><td class="label">PHONE:</td><td>'+safe(quote.store_phone||'')+'</td><td class="label">SALES ORDER:</td><td>'+safe(orderId)+'</td><td class="branch">WEST</td><td class="branch">NORTH</td></tr><tr><td class="label">JOB NAME/P.O.#:</td><td>'+safe(job)+'</td><td class="label">TOTAL # OF SCREENS:</td><td>'+safe(totalQty)+'</td><td class="branch">TUCSON</td><td class="branch vegas">VEGAS</td></tr></table>'+
       renderCut(cut)+
-      renderChoiceTable('FRAME<br>SIZE / COLOR',FRAME_OPTIONS,frame,p.frame_color)+
-      renderChoiceTable('MATERIAL<br>TYPE / COLOR',MATERIAL_OPTIONS,material,p.material_color)+
+      renderChoiceTable('FRAME<br>SIZE / COLOR',FRAME_OPTIONS,frame,frameColor)+
+      renderChoiceTable('MATERIAL<br>TYPE / COLOR',MATERIAL_OPTIONS,material,materialColor)+
       '<div class="line-area">'+renderLines(page.rows)+'<div class="drawing-wrap"><div class="drawing-head">DRAWING</div><div class="drawing-box">'+renderDiagramGrid(page.rows)+'</div>'+renderSpreader(spreader)+'</div></div>'+
       '<div class="comments"><strong>SPECIAL INSTRUCTIONS:</strong> <span class="comment-line"></span></div></div>';
   }
