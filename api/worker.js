@@ -1946,9 +1946,9 @@ function quoteDownloadUrl(quote) {
 
 function paymentMethodLabel(method) {
   const normalized = clean(method).toLowerCase();
-  if (normalized === 'stripe' || normalized === 'online') return 'online';
-  if (normalized === 'in_store') return 'in_store';
-  return normalized || 'unknown';
+  if (normalized === 'stripe' || normalized === 'online') return 'Online';
+  if (normalized === 'in_store') return 'In Store';
+  return normalized ? title(normalized.replace(/_/g, ' ')) : 'Unknown';
 }
 
 function customerAddressLine(quote) {
