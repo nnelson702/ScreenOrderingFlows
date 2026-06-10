@@ -1939,7 +1939,7 @@ function fulfillmentLabel(quote) {
 
 function quoteDownloadUrl(env, quote) {
   if (!clean(quote && quote.view_token)) return '';
-  return customerFormsBaseUrl(env) + '/quote?token=' + encodeURIComponent(clean(quote.view_token));
+  return customerFormsBaseUrl(env) + '/quote.html?token=' + encodeURIComponent(clean(quote.view_token));
 }
 
 function paymentMethodLabel(method) {
