@@ -1785,9 +1785,9 @@ function futureBusinessTilesHtml() {
         <tr>
           ${row.map((tile) => `
             <td style="width:33.33%;padding:8px;vertical-align:top;">
-              <div style="border:1px solid #ddd;border-radius:8px;padding:12px 10px;text-align:left;height:100%;background:#fafafa;">
+              <div role="group" aria-label="${esc(tile.label)} service tile" style="border:1px solid #ddd;border-radius:8px;padding:12px 10px;text-align:left;height:100%;background:#fafafa;">
                 <div style="font-size:13px;font-weight:700;margin-bottom:6px;">${esc(tile.label)}</div>
-                <div style="font-size:12px;color:#444;line-height:1.4;">${esc(tile.detail)}</div>
+                <div style="font-size:12px;color:#2f2f2f;line-height:1.4;">${esc(tile.detail)}</div>
               </div>
             </td>
           `).join('')}
