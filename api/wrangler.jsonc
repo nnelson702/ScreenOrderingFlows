@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "screen-ordering-api",
-  "main": "worker.js",
+  "main": "worker-legacy-quote-create.js",
   "compatibility_date": "2025-09-27",
   "observability": {
     "enabled": true
