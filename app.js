@@ -334,10 +334,24 @@ window.addEventListener('unhandledrejection', (event) => {
   });
 });
 
+
+function scrollToFlowTop() {
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    const app = byId('app');
+    if (app && typeof app.scrollTo === 'function') {
+      app.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+  });
+}
+
 function showView(viewId) {
   $all('.view').forEach((el) => el.classList.remove('active-view'));
   const view = byId(`view-${viewId}`);
   if (view) view.classList.add('active-view');
+  scrollToFlowTop();
 }
 
 function getCurrentScreenType() {
@@ -1186,6 +1200,7 @@ function showScreenStep(step) {
   if (prevBtn) prevBtn.disabled = safeStep === 1;
   if (nextBtn) nextBtn.style.display = safeStep === maxScreenStep ? 'none' : 'inline-flex';
   if (saveBtn) saveBtn.style.display = safeStep === maxScreenStep ? 'inline-flex' : 'none';
+  scrollToFlowTop();
 }
 
 function handleNextStep() {
