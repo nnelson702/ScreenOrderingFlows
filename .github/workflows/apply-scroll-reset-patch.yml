@@ -1,0 +1,60 @@
+name: Apply scroll reset patch
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/apply-scroll-reset-patch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+      - name: Patch app.js directly
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('app.js')
+          text = path.read_text()
+
+          helper = """\nfunction scrollToFlowTop() {\n  requestAnimationFrame(() => {\n    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });\n    document.documentElement.scrollTop = 0;\n    document.body.scrollTop = 0;\n    const app = byId('app');\n    if (app && typeof app.scrollTo === 'function') {\n      app.scrollTo({ top: 0, left: 0, behavior: 'auto' });\n    }\n  });\n}\n"""
+
+          if 'function scrollToFlowTop()' not in text:
+            marker = "function showView(viewId) {"
+            text = text.replace(marker, helper + "\n" + marker, 1)
+
+          old_show_view = """function showView(viewId) {\n  $all('.view').forEach((el) => el.classList.remove('active-view'));\n  const view = byId(`view-${viewId}`);\n  if (view) view.classList.add('active-view');\n}\n"""
+          new_show_view = """function showView(viewId) {\n  $all('.view').forEach((el) => el.classList.remove('active-view'));\n  const view = byId(`view-${viewId}`);\n  if (view) view.classList.add('active-view');\n  scrollToFlowTop();\n}\n"""
+          if old_show_view in text:
+            text = text.replace(old_show_view, new_show_view, 1)
+
+          old_step_tail = """  if (prevBtn) prevBtn.disabled = safeStep === 1;\n  if (nextBtn) nextBtn.style.display = safeStep === maxScreenStep ? 'none' : 'inline-flex';\n  if (saveBtn) saveBtn.style.display = safeStep === maxScreenStep ? 'inline-flex' : 'none';\n}\n\nfunction handleNextStep() {\n"""
+          new_step_tail = """  if (prevBtn) prevBtn.disabled = safeStep === 1;\n  if (nextBtn) nextBtn.style.display = safeStep === maxScreenStep ? 'none' : 'inline-flex';\n  if (saveBtn) saveBtn.style.display = safeStep === maxScreenStep ? 'inline-flex' : 'none';\n  scrollToFlowTop();\n}\n\nfunction handleNextStep() {\n"""
+          if old_step_tail in text:
+            text = text.replace(old_step_tail, new_step_tail, 1)
+
+          path.write_text(text)
+          PY
+      - name: Remove unused standalone helper and workflow
+        run: |
+          rm -f scroll-reset.js
+          rm -f .github/workflows/apply-scroll-reset-patch.yml
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js scroll-reset.js .github/workflows/apply-scroll-reset-patch.yml
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Reset scroll position on quote flow navigation"
+          git push
