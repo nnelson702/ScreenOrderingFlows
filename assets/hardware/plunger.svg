@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="Plunger">
+  <rect width="220" height="220" rx="110" fill="#f7f4f0"/>
+  <circle cx="110" cy="110" r="101" fill="none" stroke="#555" stroke-width="5"/>
+  <g transform="translate(44 145) rotate(-40)">
+    <rect x="0" y="-8" width="92" height="16" rx="8" fill="#8d8a78" stroke="#545148" stroke-width="3"/>
+    <line x1="22" y1="-8" x2="22" y2="8" stroke="#565348" stroke-width="3"/>
+    <line x1="38" y1="-8" x2="38" y2="8" stroke="#565348" stroke-width="3"/>
+    <line x1="54" y1="-8" x2="54" y2="8" stroke="#565348" stroke-width="3"/>
+    <circle cx="111" cy="0" r="19" fill="#333"/>
+    <rect x="86" y="-10" width="27" height="20" rx="7" fill="#4a4a42"/>
+  </g>
+</svg>
