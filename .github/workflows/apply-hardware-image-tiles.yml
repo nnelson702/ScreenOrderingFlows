@@ -1,0 +1,287 @@
+name: Apply hardware image tile patch
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/apply-hardware-image-tiles.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+      - name: Add local hardware assets and tile UI
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          repo = Path('.')
+          asset_dir = repo / 'assets' / 'hardware'
+          asset_dir.mkdir(parents=True, exist_ok=True)
+
+          svg_assets = {
+              'bale-clip.svg': '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="Bale Clip"><rect width="220" height="220" rx="110" fill="#f7f4f0"/><circle cx="110" cy="110" r="101" fill="none" stroke="#555" stroke-width="5"/><path d="M28 126 C45 110 60 110 75 126 C84 138 91 138 100 124 C112 103 130 103 144 124 C153 138 161 138 170 126 C186 110 202 112 214 128" fill="none" stroke="#4e4e4e" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>''',
+              'plunger.svg': '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="Plunger"><rect width="220" height="220" rx="110" fill="#f7f4f0"/><circle cx="110" cy="110" r="101" fill="none" stroke="#555" stroke-width="5"/><g transform="translate(44 145) rotate(-40)"><rect x="0" y="-8" width="92" height="16" rx="8" fill="#8d8a78" stroke="#545148" stroke-width="3"/><line x1="22" y1="-8" x2="22" y2="8" stroke="#565348" stroke-width="3"/><line x1="38" y1="-8" x2="38" y2="8" stroke="#565348" stroke-width="3"/><line x1="54" y1="-8" x2="54" y2="8" stroke="#565348" stroke-width="3"/><circle cx="111" cy="0" r="19" fill="#333"/><rect x="86" y="-10" width="27" height="20" rx="7" fill="#4a4a42"/></g></svg>''',
+              'pull-tab.svg': '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="Pull Tab"><rect width="220" height="220" rx="110" fill="#f7f4f0"/><circle cx="110" cy="110" r="101" fill="none" stroke="#555" stroke-width="5"/><path d="M54 82 H166 V138 H54 Z" fill="#3f4644"/><path d="M54 82 H166" stroke="#6d7371" stroke-width="8"/><path d="M61 138 H159" stroke="#222" stroke-opacity="0.35" stroke-width="5"/></svg>''',
+              'slide-leaf-spring.svg': '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="Slide Leaf Spring"><rect width="220" height="220" rx="110" fill="#f7f4f0"/><circle cx="110" cy="110" r="101" fill="none" stroke="#555" stroke-width="5"/><path d="M42 128 C72 118 90 101 113 98 C139 95 156 110 178 121" fill="none" stroke="#575b55" stroke-width="8" stroke-linecap="round"/><path d="M178 121 L198 119" stroke="#575b55" stroke-width="8" stroke-linecap="round"/></svg>''',
+              'standard-leaf-spring.svg': '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="Standard Leaf Spring"><rect width="220" height="220" rx="110" fill="#f7f4f0"/><circle cx="110" cy="110" r="101" fill="none" stroke="#555" stroke-width="5"/><path d="M44 128 C75 91 145 91 176 128" fill="none" stroke="#25242d" stroke-width="9" stroke-linecap="round"/><path d="M43 128 L30 135 M177 128 L190 135" stroke="#25242d" stroke-width="6" stroke-linecap="round"/></svg>''',
+              'tension-spring.svg': '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="Tension Spring"><rect width="220" height="220" rx="110" fill="#f7f4f0"/><circle cx="110" cy="110" r="101" fill="none" stroke="#555" stroke-width="5"/><path d="M44 148 H154 L123 130 L117 104 L139 84" fill="none" stroke="#6d6f69" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M44 148 C36 148 33 139 40 134" fill="none" stroke="#6d6f69" stroke-width="6" stroke-linecap="round"/></svg>''',
+          }
+
+          for name, svg in svg_assets.items():
+              (asset_dir / name).write_text(svg + '\n', encoding='utf-8')
+
+          app_path = repo / 'app.js'
+          text = app_path.read_text(encoding='utf-8')
+
+          constants_marker = "const FIBERGLASS_SWATCH_MAP = { black: 'swatches/fiberglass_black.png' };\n"
+          constants_insert = """
+
+const HARDWARE_IMAGE_ASSETS = {
+  bale_clip: 'assets/hardware/bale-clip.svg',
+  plunger: 'assets/hardware/plunger.svg',
+  pull_tab: 'assets/hardware/pull-tab.svg',
+  slide_leaf_spring: 'assets/hardware/slide-leaf-spring.svg',
+  standard_leaf_spring: 'assets/hardware/standard-leaf-spring.svg',
+  tension_spring: 'assets/hardware/tension-spring.svg'
+};
+
+const LOCAL_WINDOW_HARDWARE_OPTIONS = [
+  { id: 'slide_leaf_spring', label: 'Slide Leaf Spring', initials: 'SLS', imageUrl: HARDWARE_IMAGE_ASSETS.slide_leaf_spring },
+  { id: 'standard_leaf_spring', label: 'Standard Leaf Spring', initials: 'LS', imageUrl: HARDWARE_IMAGE_ASSETS.standard_leaf_spring },
+  { id: 'pull_tab', label: 'Pull Tab', initials: 'PT', imageUrl: HARDWARE_IMAGE_ASSETS.pull_tab },
+  { id: 'bale_clip', label: 'Bale Clip', initials: 'BC', imageUrl: HARDWARE_IMAGE_ASSETS.bale_clip },
+  { id: 'tension_spring', label: 'Tension Spring', initials: 'TS', imageUrl: HARDWARE_IMAGE_ASSETS.tension_spring },
+  { id: 'plunger', label: 'Plunger', initials: 'PL', imageUrl: HARDWARE_IMAGE_ASSETS.plunger }
+];
+"""
+          if 'const HARDWARE_IMAGE_ASSETS =' not in text:
+              text = text.replace(constants_marker, constants_marker + constants_insert, 1)
+
+          helper_marker = """function applyApprovedConfigOverrides(config) {
+  const cfg = config || getSafeConfig();"""
+          helper_insert = """
+function applyLocalWindowHardwareOptions(cfg) {
+  const existing = normalizeObjectArray(cfg.hardwareOptions);
+  const byId = new Map(existing.map((option) => [option.id, option]));
+
+  LOCAL_WINDOW_HARDWARE_OPTIONS.forEach((localOption) => {
+    const existingOption = byId.get(localOption.id);
+    if (existingOption) {
+      existingOption.label = localOption.label;
+      existingOption.initials = localOption.initials;
+      existingOption.imageUrl = localOption.imageUrl;
+    } else {
+      existing.push({ ...localOption });
+    }
+  });
+
+  cfg.hardwareOptions = LOCAL_WINDOW_HARDWARE_OPTIONS
+    .map((localOption) => byId.get(localOption.id) || existing.find((option) => option.id === localOption.id))
+    .filter(Boolean);
+}
+
+"""
+          if 'function applyLocalWindowHardwareOptions' not in text:
+              text = text.replace(helper_marker, helper_insert + helper_marker, 1)
+
+          apply_marker = """  ['window', 'door'].forEach((screenType) => {
+    const list = Array.isArray(cfg.materialOptions?.[screenType]) ? cfg.materialOptions[screenType] : [];
+    list.forEach((material) => {
+      const key = normalizeMaterialKey(material.id || material.label);
+      if (MATERIAL_COLORS[key]) material.colors = MATERIAL_COLORS[key].map(colorObj);
+    });
+  });
+
+  return cfg;
+}"""
+          apply_replacement = """  ['window', 'door'].forEach((screenType) => {
+    const list = Array.isArray(cfg.materialOptions?.[screenType]) ? cfg.materialOptions[screenType] : [];
+    list.forEach((material) => {
+      const key = normalizeMaterialKey(material.id || material.label);
+      if (MATERIAL_COLORS[key]) material.colors = MATERIAL_COLORS[key].map(colorObj);
+    });
+  });
+
+  applyLocalWindowHardwareOptions(cfg);
+
+  return cfg;
+}"""
+          if 'applyLocalWindowHardwareOptions(cfg);' not in text:
+              text = text.replace(apply_marker, apply_replacement, 1)
+
+          old_populate = """function populateWindowHardwareOptions() {
+  const select = $('#hardwareType');
+  if (!select || !AppState.config) return;
+  select.innerHTML = '';
+  normalizeObjectArray(AppState.config.hardwareOptions || []).forEach((hw, idx) => {
+    const opt = document.createElement('option');
+    opt.value = hw.id;
+    opt.textContent = hw.label;
+    if (idx === 0) opt.selected = true;
+    select.appendChild(opt);
+  });
+}
+"""
+          new_populate = """function populateWindowHardwareOptions() {
+  const select = $('#hardwareType');
+  if (!select || !AppState.config) return;
+  select.innerHTML = '';
+  normalizeObjectArray(AppState.config.hardwareOptions || []).forEach((hw, idx) => {
+    const opt = document.createElement('option');
+    opt.value = hw.id;
+    opt.textContent = hw.label;
+    if (idx === 0) opt.selected = true;
+    select.appendChild(opt);
+  });
+  renderHardwareTypeTiles();
+  updateHardwareImage();
+}
+
+function getDisplayHardwareImageUrl(def) {
+  if (!def || !def.imageUrl) return '';
+  let url = def.imageUrl;
+  const match = String(url).match(/\/file\/d\/([^/]+)\//);
+  if (match) url = `https://drive.google.com/uc?export=view&id=${match[1]}`;
+  return url;
+}
+
+function renderHardwareTypeTiles() {
+  const select = $('#hardwareType');
+  if (!select || !AppState.config) return;
+  const field = select.closest('.form-field');
+  if (!field) return;
+
+  let container = $('#hardwareTypeTiles');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'hardwareTypeTiles';
+    container.className = 'hardware-type-tile-grid';
+    select.insertAdjacentElement('afterend', container);
+    select.classList.add('hardware-type-select-fallback');
+  }
+
+  const options = normalizeObjectArray(AppState.config.hardwareOptions || []);
+  if (!select.value && options[0]) select.value = options[0].id;
+
+  container.innerHTML = '';
+  options.forEach((hw) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `hardware-type-tile${hw.id === select.value ? ' is-selected' : ''}`;
+    btn.setAttribute('aria-pressed', hw.id === select.value ? 'true' : 'false');
+
+    const imgWrap = document.createElement('span');
+    imgWrap.className = 'hardware-type-image-wrap';
+    const url = getDisplayHardwareImageUrl(hw);
+    if (url) {
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = '';
+      img.loading = 'lazy';
+      imgWrap.appendChild(img);
+    } else {
+      imgWrap.textContent = hw.initials || '?';
+    }
+
+    const label = document.createElement('span');
+    label.className = 'hardware-type-label';
+    label.textContent = hw.label || hw.id;
+
+    const initials = document.createElement('span');
+    initials.className = 'hardware-type-initials';
+    initials.textContent = hw.initials || '';
+
+    btn.appendChild(imgWrap);
+    btn.appendChild(label);
+    btn.appendChild(initials);
+    btn.addEventListener('click', () => {
+      select.value = hw.id;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      renderHardwareTypeTiles();
+    });
+
+    container.appendChild(btn);
+  });
+}
+"""
+          if 'function renderHardwareTypeTiles()' not in text:
+              text = text.replace(old_populate, new_populate, 1)
+
+          old_image = """  const def = getHardwareDefById($('#hardwareType')?.value);
+  if (def && def.imageUrl) {
+    let url = def.imageUrl;
+    const match = url.match(/\/file\/d\/([^/]+)\//);
+    if (match) url = `https://drive.google.com/uc?export=view&id=${match[1]}`;
+    img.onload = () => preview.classList.remove('hidden');
+    img.onerror = () => preview.classList.add('hidden');
+    img.src = url;
+    caption.textContent = def.label;
+  } else {
+    preview.classList.add('hidden');
+  }
+}"""
+          new_image = """  const def = getHardwareDefById($('#hardwareType')?.value);
+  const url = getDisplayHardwareImageUrl(def);
+  if (def && url) {
+    img.onload = () => preview.classList.remove('hidden');
+    img.onerror = () => preview.classList.add('hidden');
+    img.src = url;
+    caption.textContent = def.label;
+  } else {
+    preview.classList.add('hidden');
+  }
+}"""
+          text = text.replace(old_image, new_image, 1)
+
+          old_event = """  $('#btnAddHardware')?.addEventListener('click', handleAddHardware);
+  $('#hardwareType')?.addEventListener('change', updateHardwareImage);
+  $('#btnSubmitQuote')?.addEventListener('click', handleSubmitQuote);"""
+          new_event = """  $('#btnAddHardware')?.addEventListener('click', handleAddHardware);
+  $('#hardwareType')?.addEventListener('change', () => {
+    updateHardwareImage();
+    renderHardwareTypeTiles();
+  });
+  $('#btnSubmitQuote')?.addEventListener('click', handleSubmitQuote);"""
+          text = text.replace(old_event, new_event, 1)
+
+          style_marker = """    #hardwareSide{margin-bottom:.65rem}
+    .qty-stepper{display:grid;grid-template-columns:46px minmax(64px,92px) 46px;align-items:center;gap:.45rem;max-width:200px}"""
+          style_insert = """    #hardwareSide{margin-bottom:.65rem}
+    .hardware-type-select-fallback{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important;white-space:nowrap!important}
+    .hardware-type-tile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:.75rem;margin-top:.45rem;margin-bottom:.7rem}
+    .hardware-type-tile{border:2px solid #d0d4da;border-radius:.7rem;background:#fff;padding:.55rem .45rem .6rem;min-height:146px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.35rem;cursor:pointer;color:#222;text-align:center;font:inherit}
+    .hardware-type-tile.is-selected{border-color:#b01c2e;box-shadow:0 0 0 2px rgba(176,28,46,.18);background:#fff7f8}
+    .hardware-type-tile:focus-visible{outline:2px solid #b01c2e;outline-offset:2px}
+    .hardware-type-image-wrap{width:78px;height:78px;border-radius:999px;border:1px solid #cfd4dc;background:#f7f4f0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-weight:800;color:#555}
+    .hardware-type-image-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+    .hardware-type-label{font-size:.78rem;font-weight:700;line-height:1.15}
+    .hardware-type-initials{font-size:.68rem;color:#666;text-transform:uppercase;letter-spacing:.05em}
+    .qty-stepper{display:grid;grid-template-columns:46px minmax(64px,92px) 46px;align-items:center;gap:.45rem;max-width:200px}"""
+          if '.hardware-type-tile-grid' not in text:
+              text = text.replace(style_marker, style_insert, 1)
+
+          app_path.write_text(text, encoding='utf-8')
+          PY
+      - name: Validate JavaScript syntax
+        run: node --check app.js
+      - name: Remove temporary patch workflow
+        run: rm -f .github/workflows/apply-hardware-image-tiles.yml
+      - name: Commit hardware image tile changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js assets/hardware .github/workflows/apply-hardware-image-tiles.yml
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Add hardware image tile selector"
+          git push
