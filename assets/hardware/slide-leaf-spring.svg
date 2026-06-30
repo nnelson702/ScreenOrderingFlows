@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="Slide Leaf Spring">
+  <rect width="220" height="220" rx="110" fill="#f7f4f0"/>
+  <circle cx="110" cy="110" r="101" fill="none" stroke="#555" stroke-width="5"/>
+  <path d="M42 128 C72 118 90 101 113 98 C139 95 156 110 178 121" fill="none" stroke="#575b55" stroke-width="8" stroke-linecap="round"/>
+  <path d="M178 121 L198 119" stroke="#575b55" stroke-width="8" stroke-linecap="round"/>
+</svg>
