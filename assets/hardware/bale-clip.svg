@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="Bale Clip">
+  <rect width="220" height="220" rx="110" fill="#f7f4f0"/>
+  <circle cx="110" cy="110" r="101" fill="none" stroke="#555" stroke-width="5"/>
+  <path d="M28 126 C45 110 60 110 75 126 C84 138 91 138 100 124 C112 103 130 103 144 124 C153 138 161 138 170 126 C186 110 202 112 214 128" fill="none" stroke="#4e4e4e" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
