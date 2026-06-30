@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="Tension Spring">
+  <rect width="220" height="220" rx="110" fill="#f7f4f0"/>
+  <circle cx="110" cy="110" r="101" fill="none" stroke="#555" stroke-width="5"/>
+  <path d="M44 148 H154 L123 130 L117 104 L139 84" fill="none" stroke="#6d6f69" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M44 148 C36 148 33 139 40 134" fill="none" stroke="#6d6f69" stroke-width="6" stroke-linecap="round"/>
+</svg>
