@@ -761,3 +761,61 @@ textarea {
   font-size: 1.15rem;
   font-weight: 700;
 }
+
+/* Hardware step containment overrides */
+.screen-step.active-step #windowOnlyFields.full-width {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+#windowOnlyFields.hardware-step-panel {
+  overflow: visible !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+#windowOnlyFields .hardware-layout.hardware-step-grid {
+  grid-template-columns: minmax(0, 330px) minmax(210px, 1fr) !important;
+  gap: 1rem !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+}
+#windowOnlyFields .hardware-controls.hardware-step-controls {
+  max-width: 330px !important;
+  grid-template-columns: minmax(0, 140px) minmax(0, 170px) !important;
+  gap: 0.75rem 0.85rem !important;
+}
+#windowOnlyFields .hardware-type-tile-grid {
+  max-width: 330px !important;
+  gap: 0.55rem !important;
+}
+#windowOnlyFields .hardware-type-tile {
+  min-height: 116px !important;
+  padding: 0.45rem 0.32rem 0.5rem !important;
+}
+#windowOnlyFields .hardware-type-image-wrap {
+  width: 62px !important;
+  height: 62px !important;
+}
+#windowOnlyFields .hardware-diagram-wrapper.hardware-step-diagram {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  padding-top: 1.1rem !important;
+}
+#windowOnlyFields .hardware-diagram-wrapper.hardware-step-diagram .hardware-diagram {
+  width: 158px !important;
+  height: 158px !important;
+}
+@media (max-width: 760px) {
+  #windowOnlyFields .hardware-layout.hardware-step-grid {
+    grid-template-columns: 1fr !important;
+  }
+  #windowOnlyFields .hardware-controls.hardware-step-controls,
+  #windowOnlyFields .hardware-type-tile-grid {
+    max-width: none !important;
+  }
+  #windowOnlyFields .hardware-diagram-wrapper.hardware-step-diagram {
+    padding-top: 0.25rem !important;
+  }
+}
