@@ -6,7 +6,7 @@
     { id: 'standard_leaf_spring', label: 'Standard Leaf Spring', initials: 'LS', imageUrl: 'assets/hardware/standard-leaf-spring.svg' },
     { id: 'pull_tab', label: 'Pull Tab', initials: 'PT', imageUrl: 'assets/hardware/pulltab.svg' },
     { id: 'bale_clip', label: 'Bale Clip', initials: 'BC', imageUrl: 'assets/hardware/bale-clip.svg' },
-    { id: 'tension_spring', label: 'Tension Spring', initials: 'TS', imageUrl: 'assets/hardware/tension-spring.svg' },
+    { id: 'tension_spring', label: 'Tension Spring', initials: 'TS', imageUrl: 'assets/hardware/tension-spring.svg?v=2' },
     { id: 'plunger', label: 'Plunger', initials: 'PL', imageUrl: 'assets/hardware/plunger.svg' }
   ];
 
@@ -28,18 +28,61 @@
     style.id = 'hardwareTileStyles';
     style.textContent = `
       .hardware-type-select-fallback{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important;white-space:nowrap!important}
-      .hardware-type-tile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:.75rem;margin-top:.45rem;margin-bottom:.85rem;max-width:100%}
-      .hardware-type-tile{border:2px solid #d0d4da;border-radius:.7rem;background:#fff;padding:.55rem .45rem .6rem;min-height:146px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.35rem;cursor:pointer;color:#222;text-align:center;font:inherit;width:100%}
+      #windowOnlyFields.hardware-step-panel{padding:1rem 1.15rem;border-radius:.65rem;overflow:hidden}
+      #windowOnlyFields.hardware-step-panel>.helper-text{max-width:640px;margin:.15rem 0 .35rem}
+      #windowOnlyFields .hardware-layout.hardware-step-grid{display:grid;grid-template-columns:minmax(320px,1.05fr) minmax(260px,.95fr);gap:1.75rem;align-items:start;margin-top:1rem;min-width:0}
+      #windowOnlyFields .hardware-controls.hardware-step-controls{display:grid;grid-template-columns:minmax(0,160px) minmax(0,220px);gap:.85rem 1rem;align-items:end;min-width:0}
+      #windowOnlyFields .hardware-controls.hardware-step-controls>.form-field:first-child{grid-column:1/-1}
+      #windowOnlyFields .hardware-controls.hardware-step-controls>.form-field:nth-of-type(2){max-width:170px}
+      #windowOnlyFields .hardware-controls.hardware-step-controls>.form-field:nth-of-type(3){max-width:260px}
+      .hardware-step-summary{grid-column:1/-1;margin-top:.1rem;min-height:1.2rem}
+      .hardware-type-tile-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;margin-top:.45rem;margin-bottom:.2rem;max-width:475px;width:100%}
+      .hardware-type-tile{border:2px solid #d0d4da;border-radius:.7rem;background:#fff;padding:.5rem .4rem .55rem;min-height:126px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.3rem;cursor:pointer;color:#222;text-align:center;font:inherit;width:100%}
       .hardware-type-tile.is-selected{border-color:#b01c2e;box-shadow:0 0 0 2px rgba(176,28,46,.18);background:#fff7f8}
       .hardware-type-tile:focus-visible{outline:2px solid #b01c2e;outline-offset:2px}
-      .hardware-type-image-wrap{width:78px;height:78px;border-radius:999px;border:1px solid #cfd4dc;background:#f7f4f0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-weight:800;color:#555}
+      .hardware-type-image-wrap{width:70px;height:70px;border-radius:999px;border:1px solid #cfd4dc;background:#f7f4f0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-weight:800;color:#555}
       .hardware-type-image-wrap img{width:100%;height:100%;object-fit:cover;display:block}
       .hardware-type-label{font-size:.78rem;font-weight:700;line-height:1.15}
       .hardware-type-initials{font-size:.68rem;color:#666;text-transform:uppercase;letter-spacing:.05em}
-      @media(max-width:640px){.hardware-type-tile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hardware-type-tile{min-height:138px}.hardware-type-image-wrap{width:72px;height:72px}}
+      #windowOnlyFields .hardware-diagram-wrapper.hardware-step-diagram{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-width:0;padding-top:1.55rem}
+      .hardware-diagram-instruction{align-self:stretch;max-width:360px;margin:0 auto .95rem!important}
+      .hardware-action-field{width:100%;max-width:360px;margin:.85rem auto 0}
+      .hardware-action-field .btn{width:100%}
+      #windowOnlyFields .hardware-diagram-wrapper.hardware-step-diagram .hardware-diagram{width:170px;height:170px;margin:0 auto .75rem}
+      @media(max-width:860px){#windowOnlyFields .hardware-layout.hardware-step-grid{grid-template-columns:1fr;gap:1rem}#windowOnlyFields .hardware-diagram-wrapper.hardware-step-diagram{padding-top:.25rem}.hardware-action-field{max-width:none}}
+      @media(max-width:640px){#windowOnlyFields .hardware-controls.hardware-step-controls{grid-template-columns:1fr}.hardware-type-tile-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none}.hardware-type-tile{min-height:124px}.hardware-type-image-wrap{width:68px;height:68px}}
       @media(max-width:380px){.hardware-type-tile-grid{grid-template-columns:1fr}}
     `;
     document.head.appendChild(style);
+  }
+
+  function arrangeHardwareStep() {
+    const panel = document.getElementById('windowOnlyFields');
+    const layout = panel?.querySelector('.hardware-layout');
+    const controls = panel?.querySelector('.hardware-controls');
+    const diagram = panel?.querySelector('.hardware-diagram-wrapper');
+    if (!panel || !layout || !controls || !diagram) return;
+
+    panel.classList.add('hardware-step-panel');
+    layout.classList.add('hardware-step-grid');
+    controls.classList.add('hardware-step-controls');
+    diagram.classList.add('hardware-step-diagram');
+
+    const instruction = Array.from(controls.querySelectorAll('p.helper-text'))
+      .find((node) => node.textContent.includes('Choose a hardware type'));
+    if (instruction) {
+      instruction.classList.add('hardware-diagram-instruction');
+      if (!diagram.contains(instruction)) diagram.insertBefore(instruction, diagram.firstChild);
+    }
+
+    const actionButton = document.getElementById('btnAddHardware');
+    const actionField = actionButton?.closest('.form-field');
+    if (actionField) {
+      actionField.classList.add('hardware-action-field');
+      if (!diagram.contains(actionField)) diagram.appendChild(actionField);
+    }
+
+    document.getElementById('hardwareListSummary')?.classList.add('hardware-step-summary');
   }
 
   function syncSelectOptions(select) {
@@ -60,6 +103,7 @@
 
     normalizeOptions();
     ensureStyles();
+    arrangeHardwareStep();
     syncSelectOptions(select);
     select.classList.add('hardware-type-select-fallback');
 
