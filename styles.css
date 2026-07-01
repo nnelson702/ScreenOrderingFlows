@@ -181,7 +181,8 @@ canvas {
   gap: 0.25rem;
   min-width: 0;
 }
-.form-field.full-width {
+.form-field.full-width,
+.full-width {
   grid-column: 1 / -1;
 }
 label {
@@ -758,17 +759,5 @@ textarea {
 
 #successPaymentLink {
   font-size: 1.15rem;
-  font-weight: 800;
-  overflow-wrap: anywhere;
-}
-
-@media (max-width: 640px) {
-  .swatch-tiles {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 380px) {
-  .swatch-tiles {
-    grid-template-columns: 1fr;
-  }
+  font-weight: 700;
 }
