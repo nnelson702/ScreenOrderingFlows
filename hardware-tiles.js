@@ -30,14 +30,16 @@
       .hardware-type-select-fallback{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important;white-space:nowrap!important}
       #windowOnlyFields.hardware-step-panel{padding:1rem 1.15rem;border-radius:.65rem;overflow:hidden}
       #windowOnlyFields.hardware-step-panel>.helper-text{max-width:640px;margin:.15rem 0 .35rem}
-      #windowOnlyFields .hardware-layout.hardware-step-grid{display:grid;grid-template-columns:minmax(320px,1.05fr) minmax(260px,.95fr);gap:1.75rem;align-items:start;margin-top:1rem;min-width:0}
-      #windowOnlyFields .hardware-controls.hardware-step-controls{display:grid;grid-template-columns:minmax(0,160px) minmax(0,220px);gap:.85rem 1rem;align-items:end;min-width:0}
+      #windowOnlyFields .hardware-layout.hardware-step-grid{display:grid;grid-template-columns:minmax(0,330px) minmax(260px,1fr);gap:1.25rem;align-items:start;margin-top:1rem;min-width:0;width:100%;max-width:100%}
+      #windowOnlyFields .hardware-controls.hardware-step-controls{display:grid;grid-template-columns:minmax(0,168px) minmax(0,150px);gap:.85rem .75rem;align-items:end;min-width:0;max-width:330px}
       #windowOnlyFields .hardware-controls.hardware-step-controls>.form-field:first-child{grid-column:1/-1}
-      #windowOnlyFields .hardware-controls.hardware-step-controls>.form-field:nth-of-type(2){max-width:170px}
-      #windowOnlyFields .hardware-controls.hardware-step-controls>.form-field:nth-of-type(3){max-width:260px}
+      #windowOnlyFields .hardware-controls.hardware-step-controls>.form-field:nth-of-type(2){max-width:168px}
+      #windowOnlyFields .hardware-controls.hardware-step-controls>.form-field:nth-of-type(3){max-width:150px}
+      #windowOnlyFields .qty-stepper{grid-template-columns:34px minmax(56px,68px) 34px!important;gap:.32rem!important;max-width:150px!important}
+      #windowOnlyFields .qty-stepper input{min-width:0!important}
       .hardware-step-summary{grid-column:1/-1;margin-top:.1rem;min-height:1.2rem}
-      .hardware-type-tile-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;margin-top:.45rem;margin-bottom:.2rem;max-width:475px;width:100%}
-      .hardware-type-tile{border:2px solid #d0d4da;border-radius:.7rem;background:#fff;padding:.5rem .4rem .55rem;min-height:126px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.3rem;cursor:pointer;color:#222;text-align:center;font:inherit;width:100%}
+      .hardware-type-tile-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;margin-top:.45rem;margin-bottom:.2rem;max-width:330px;width:100%}
+      .hardware-type-tile{border:2px solid #d0d4da;border-radius:.7rem;background:#fff;padding:.5rem .4rem .55rem;min-height:126px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.35rem;cursor:pointer;color:#222;text-align:center;font:inherit;width:100%}
       .hardware-type-tile.is-selected{border-color:#b01c2e;box-shadow:0 0 0 2px rgba(176,28,46,.18);background:#fff7f8}
       .hardware-type-tile:focus-visible{outline:2px solid #b01c2e;outline-offset:2px}
       .hardware-type-image-wrap{width:70px;height:70px;border-radius:999px;border:1px solid #cfd4dc;background:#f7f4f0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-weight:800;color:#555}
@@ -50,7 +52,7 @@
       .hardware-action-field .btn{width:100%}
       #windowOnlyFields .hardware-diagram-wrapper.hardware-step-diagram .hardware-diagram{width:170px;height:170px;margin:0 auto .75rem}
       @media(max-width:860px){#windowOnlyFields .hardware-layout.hardware-step-grid{grid-template-columns:1fr;gap:1rem}#windowOnlyFields .hardware-diagram-wrapper.hardware-step-diagram{padding-top:.25rem}.hardware-action-field{max-width:none}}
-      @media(max-width:640px){#windowOnlyFields .hardware-controls.hardware-step-controls{grid-template-columns:1fr}.hardware-type-tile-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none}.hardware-type-tile{min-height:124px}.hardware-type-image-wrap{width:68px;height:68px}}
+      @media(max-width:640px){#windowOnlyFields .hardware-controls.hardware-step-controls{grid-template-columns:1fr;max-width:none}.hardware-type-tile-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:none}.hardware-type-tile{min-height:124px}.hardware-type-image-wrap{width:68px;height:68px}}
       @media(max-width:380px){.hardware-type-tile-grid{grid-template-columns:1fr}}
     `;
     document.head.appendChild(style);
