@@ -10,7 +10,11 @@
     { id: 'plunger', label: 'Plunger', initials: 'PL', imageUrl: 'assets/hardware/plunger.svg' }
   ];
 
+  const CROSSBAR_WARNING_TEXT = 'This opening is large enough that we recommend a crossbar. You chose not to include one. Be aware this may cause some bowing in the middle.';
+
   let installed = false;
+  let lastCrossbarWarningKey = '';
+  let nativeAlert = null;
 
   function getState() {
     try { return AppState; } catch (err) { return null; }
@@ -154,12 +158,55 @@
     return true;
   }
 
+  function getCrossbarWarningKey() {
+    const activeStep = document.querySelector('.screen-step.active-step');
+    const crossbarLabel = document.getElementById('crossbarLabel');
+    const crossbarSelect = document.getElementById('crossbarNeeded');
+    if (!activeStep || activeStep.dataset.step !== '6') return '';
+    if (!crossbarLabel || !crossbarLabel.textContent.includes('recommended')) return '';
+    if (!crossbarSelect || crossbarSelect.value !== 'no') return '';
+    const width = `${document.getElementById('screenWidthWhole')?.value || ''}-${document.getElementById('screenWidthFraction')?.value || ''}`;
+    const height = `${document.getElementById('screenHeightWhole')?.value || ''}-${document.getElementById('screenHeightFraction')?.value || ''}`;
+    return `${width}|${height}`;
+  }
+
+  function maybeShowCrossbarWarningOnStepEntry() {
+    const key = getCrossbarWarningKey();
+    if (!key || key === lastCrossbarWarningKey) return;
+    lastCrossbarWarningKey = key;
+    nativeAlert(CROSSBAR_WARNING_TEXT);
+  }
+
+  function installCrossbarWarningMove() {
+    if (nativeAlert) return;
+    nativeAlert = window.alert.bind(window);
+    window.alert = function patchedAlert(message) {
+      if (String(message) === CROSSBAR_WARNING_TEXT && getCrossbarWarningKey() === lastCrossbarWarningKey) return;
+      nativeAlert(message);
+    };
+
+    const stepObserver = new MutationObserver(() => {
+      window.setTimeout(maybeShowCrossbarWarningOnStepEntry, 0);
+    });
+    const form = document.getElementById('screenForm');
+    if (form) stepObserver.observe(form, { subtree: true, attributes: true, attributeFilter: ['class'] });
+
+    document.addEventListener('change', (event) => {
+      if (event.target && event.target.id === 'crossbarNeeded') {
+        window.setTimeout(maybeShowCrossbarWarningOnStepEntry, 0);
+      }
+    });
+  }
+
   function install() {
     if (installed) return;
     installed = true;
 
     const interval = window.setInterval(() => {
-      if (renderTiles()) window.clearInterval(interval);
+      const rendered = renderTiles();
+      installCrossbarWarningMove();
+      maybeShowCrossbarWarningOnStepEntry();
+      if (rendered) window.clearInterval(interval);
     }, 120);
 
     window.setTimeout(() => window.clearInterval(interval), 10000);
