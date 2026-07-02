@@ -42,6 +42,14 @@ _headers                           Cloudflare Pages headers
 Important docs:
 
 ```text
+docs/README.md
+docs/ARCHITECTURE.md
+docs/DATA_CONTRACT.md
+docs/API_CONTRACT.md
+docs/DEPLOYMENT.md
+docs/CHANGE_CONTROL.md
+docs/TROUBLESHOOTING.md
+docs/TEST_MATRIX.md
 docs/CONFIG_OWNERSHIP_PLAN.md
 docs/STORE_BETA_TEST_CHECKLIST.md
 docs/PRODUCTION_FORM_STATUS_AUDIT.md
@@ -50,12 +58,14 @@ docs/RELEASE_REGRESSION_CHECKLIST.md
 docs/CODING_EXECUTION_STANDARD.md
 ```
 
-## Intended beta URLs
+## Confirmed URLs
 
 ```text
-Customer flow: https://www.helpful.place/screens
-Staff portal:  https://www.helpful.place/screensadmin
+Customer/internal quote flow: https://www.screens.helpful.place
+Staff portal:                 https://www.screens.helpful.place/staff
 ```
+
+Older references to `https://www.helpful.place/screens` or `/screensadmin` are historical unless deliberately restored.
 
 ## Non-negotiable business rules
 
@@ -261,7 +271,7 @@ docs/CONFIG_OWNERSHIP_PLAN.md
 
 ### Customer quote
 
-1. Start a quote.
+1. Start a quote at `https://www.screens.helpful.place`.
 2. Enter customer info.
 3. Confirm selected store.
 4. Add a window screen.
@@ -297,13 +307,14 @@ docs/CONFIG_OWNERSHIP_PLAN.md
 
 ### Staff/status
 
-1. Submit test quote.
-2. Confirm quote emails.
-3. Mark In Production.
-4. Click In Production again and confirm no duplicate lifecycle email.
-5. Mark Ready.
-6. Click Ready again and confirm no duplicate ready email.
-7. Confirm vendor form path works.
+1. Open `https://www.screens.helpful.place/staff`.
+2. Submit test quote.
+3. Confirm quote emails.
+4. Mark In Production.
+5. Click In Production again and confirm no duplicate lifecycle email.
+6. Mark Ready.
+7. Click Ready again and confirm no duplicate ready email.
+8. Confirm vendor form path works.
 
 ## Defect severity
 
@@ -404,6 +415,7 @@ Crossbar warning timing: corrected
 Worker diagnostics cleanup: complete
 Production Worker entrypoint: api/worker-production.js
 Temporary diagnostics wrapper: removed
+Enterprise documentation buildout: complete
 ```
 
 Future work should be driven by beta feedback, not speculative refactoring.
