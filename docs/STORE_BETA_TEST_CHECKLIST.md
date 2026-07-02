@@ -10,10 +10,10 @@ The goal is to confirm that a store can receive, review, collect payment for, an
 
 ## Beta URLs
 
-During beta, the intended company website paths are:
+During beta, the confirmed paths are:
 
-- Customer quote flow: `https://www.helpful.place/screens`
-- Staff portal: `https://www.helpful.place/screensadmin`
+- Customer quote flow: `https://www.screens.helpful.place`
+- Staff portal: `https://www.screens.helpful.place/staff`
 
 These pages may be hidden from public site navigation during beta. Hidden pages are not full access control. Staff portal access still depends on the staff access gate.
 
@@ -62,7 +62,7 @@ Issues found:
 
 ### Customer quote page
 
-- [ ] Open `https://www.helpful.place/screens`.
+- [ ] Open `https://www.screens.helpful.place`.
 - [ ] Confirm the screen quote tool loads.
 - [ ] Confirm the page is usable on desktop.
 - [ ] Confirm the page is usable on mobile.
@@ -70,7 +70,7 @@ Issues found:
 
 ### Staff portal
 
-- [ ] Open `https://www.helpful.place/screensadmin`.
+- [ ] Open `https://www.screens.helpful.place/staff`.
 - [ ] Confirm the staff portal loads.
 - [ ] Enter the staff access value.
 - [ ] Confirm dashboard opens.
@@ -238,8 +238,6 @@ After paid/in-production status:
 - [ ] Confirm window form is usable, if window screen was ordered.
 - [ ] Confirm patio door form is usable, if patio door screen was ordered.
 - [ ] Confirm quote ID or sales order reference appears.
-- [ ] Confirm dealer/store information appears.
-- [ ] Confirm customer/job name appears.
 - [ ] Confirm quantity matches.
 - [ ] Confirm width and height match.
 - [ ] Confirm material matches.
