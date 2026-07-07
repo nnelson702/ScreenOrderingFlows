@@ -1,6 +1,6 @@
 // Staff Dashboard V4.2 active/store defaults, sortable results, and top-admin access controls.
 (function(){
-  const inactiveStatuses=['cancelled','expired'];
+  const inactiveStatuses=['completed','cancelled','expired'];
   const storeMap={
     '18228':'Tropicana',
     '18507':'Horizon Ridge',
@@ -35,7 +35,7 @@
     const notice=document.querySelector('#appView .notice.show.ok');
     if(notice) notice.innerHTML='<strong>Dashboard ready.</strong> Active orders load by default. Top Admin can manage store access values.';
     const helper=document.querySelector('.layout section.card .helper');
-    if(helper) helper.textContent='Recent defaults to active orders only. Submitted legacy quotes are treated as active. Use the status filter to include Cancelled or Expired when needed.';
+    if(helper) helper.textContent='Recent defaults to active orders only. Completed, Cancelled, and Expired orders are closed. Submitted legacy quotes are treated as active. Use the status filter to include closed orders when needed.';
   }
 
   function enhanceStatusFilter(){
@@ -55,7 +55,7 @@
       else f.statusFilter.appendChild(submitted);
     }
     const all=Array.from(f.statusFilter.options).find(o=>o.value==='all');
-    if(all) all.textContent='All Including Cancelled/Expired';
+    if(all) all.textContent='All Including Completed/Cancelled/Expired';
   }
 
   function enhanceSortableHeaders(){
