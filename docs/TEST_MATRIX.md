@@ -91,6 +91,7 @@ P2 minor: queue if not blocking
 | ST-04 | Status update | Mark in_production | Status changes and persists | P0 |
 | ST-05 | Repeat status | Mark same status again | No duplicate lifecycle email | P0 |
 | ST-06 | Sign out/lock | Sign out or lock | Session access is restricted | P1 |
+| ST-07 | Active-only filter | Completed, Cancelled, and Expired orders exist | Active Only excludes completed/cancelled/expired orders | P1 |
 
 ## Vendor/production form tests
 
