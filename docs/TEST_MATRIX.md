@@ -31,6 +31,7 @@ P2 minor: queue if not blocking
 | CQ-05 | Patio door item | Add patio door with roller and handle height | Line item saves with correct data | P1 |
 | CQ-06 | Mixed quote | Add window and patio door | Summary shows both items and correct totals | P1 |
 | CQ-07 | Submit quote | Submit valid quote | Success screen and quote ID appear | P0 |
+| CQ-08 | Pre-submit line item edit | Add one or more screens, click Edit before Submit Quote | Existing draft line item reloads, updates in place, preserves order, recalculates totals, and submits edited payload | P0 |
 
 ## Delivery tests
 
