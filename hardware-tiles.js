@@ -222,3 +222,20 @@
     install();
   }
 })();
+
+(function () {
+  function loadPreSubmitLineEditor() {
+    if (document.querySelector('script[data-pre-submit-line-editor="1"]')) return;
+    const script = document.createElement('script');
+    script.src = 'line-item-editor.js?v=1';
+    script.defer = true;
+    script.dataset.preSubmitLineEditor = '1';
+    (document.body || document.head).appendChild(script);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadPreSubmitLineEditor);
+  } else {
+    loadPreSubmitLineEditor();
+  }
+})();
