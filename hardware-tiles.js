@@ -26,11 +26,17 @@
     state.config.hardwareOptions = HARDWARE_TILE_OPTIONS.map((option) => ({ ...option }));
   }
 
+  function hideEnvironmentPill() {
+    const pill = document.getElementById('envIndicator');
+    if (pill) pill.remove();
+  }
+
   function ensureStyles() {
     if (document.getElementById('hardwareTileStyles')) return;
     const style = document.createElement('style');
     style.id = 'hardwareTileStyles';
     style.textContent = `
+      #envIndicator,.environment-pill{display:none!important}
       .hardware-type-select-fallback{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important;white-space:nowrap!important}
       #windowOnlyFields.hardware-step-panel{padding:1rem 1.15rem;border-radius:.65rem;overflow:hidden}
       #windowOnlyFields.hardware-step-panel>.helper-text{max-width:640px;margin:.15rem 0 .35rem}
@@ -108,6 +114,7 @@
     if (!select) return false;
 
     normalizeOptions();
+    hideEnvironmentPill();
     ensureStyles();
     arrangeHardwareStep();
     syncSelectOptions(select);
@@ -201,9 +208,11 @@
   function install() {
     if (installed) return;
     installed = true;
+    hideEnvironmentPill();
 
     const interval = window.setInterval(() => {
       const rendered = renderTiles();
+      hideEnvironmentPill();
       installCrossbarWarningMove();
       maybeShowCrossbarWarningOnStepEntry();
       if (rendered) window.clearInterval(interval);
