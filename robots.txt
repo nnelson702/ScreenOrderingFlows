@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /staff
+Disallow: /staff.html
+Disallow: /quote
+Disallow: /quote.html
+Disallow: /api/
+
+Sitemap: https://screens.helpful.place/sitemap.xml
