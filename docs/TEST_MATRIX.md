@@ -24,7 +24,7 @@ P2 minor: queue if not blocking
 
 | ID | Test | Setup | Expected result | Severity |
 |---|---|---|---|---|
-| CQ-01 | App load | Open `https://www.screens.helpful.place` | Tool loads without console-blocking errors | P0 |
+| CQ-01 | App load | Open `https://screens.helpful.place` | Tool loads without console-blocking errors | P0 |
 | CQ-02 | Customer info | Enter name, phone, email, address | Customer data appears correctly in summary | P0 |
 | CQ-03 | Store selection | Use valid local address/ZIP | Selected store appears and can be overridden | P0 |
 | CQ-04 | Window item | Add window screen with qty, dimensions, frame, material | Line item saves with correct data | P0 |
@@ -86,7 +86,7 @@ P2 minor: queue if not blocking
 
 | ID | Test | Setup | Expected result | Severity |
 |---|---|---|---|---|
-| ST-01 | Staff load | Open `https://www.screens.helpful.place/staff` | Staff portal loads | P0 |
+| ST-01 | Staff load | Open `https://screens.helpful.place/staff` | Staff portal loads | P0 |
 | ST-02 | Login | Valid staff access | Session created and dashboard opens | P0 |
 | ST-03 | Search recent | Load recent/search by quote | Quote appears | P0 |
 | ST-04 | Status update | Mark in_production | Status changes and persists | P0 |
