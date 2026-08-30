@@ -1,22 +1,45 @@
-# Helpful ACE Screen Replacement Ordering
+# Helpful ACE Custom Screen Ordering
 
-Helpful ACE, operated by Skye Bridge LLC, provides an online quoting and ordering flow for complete replacement window screens and patio sliding screen doors in the Las Vegas and Henderson, Nevada area.
+Helpful ACE, operated by Skye Bridge LLC, provides an online quoting and ordering flow for complete replacement window screens and sliding patio screen doors across the Las Vegas Valley, including Las Vegas, North Las Vegas, Henderson and connected unincorporated Clark County communities.
 
 ## Primary service
 - Complete replacement window screens
-- Complete replacement patio sliding screen doors
+- Complete replacement sliding patio screen doors
 - Custom sizing based on customer-provided finished outside dimensions
-- Frame, material, hardware, roller, handle and crossbar selections where applicable
-- Pickup and eligible delivery options are calculated in the ordering flow
+- Window frame profile and color selection
+- Screen-material selection
+- Window hardware type, quantity and placement
+- Crossbar configuration where applicable
+- Patio-door frame, roller, handle orientation and handle-height configuration
+- Local Helpful ACE pickup and eligible local delivery options
+
+## Screen materials currently represented in the ordering tool
+- Fiberglass
+- Aluminum
+- Pet-resistant screen
+- VIMCO 20x30
+- Solar 70
+- Solar 90
+- SunTex 80
+- SunTex 90
+
+## Manufacturing
+Paid Helpful ACE screen orders are sent to ScreenFab, the screen-manufacturing partner used for this program. Completed screens return to the local store network on the regular weekly vendor delivery cycle.
 
 ## Important service distinction
 This service is for complete replacement screens and patio screen doors. It is not a repair or rescreening service for an existing frame.
 
 ## Ordering guidance
-Customers should measure finished outside width and height to the nearest 1/8 inch and verify all measurements and hardware selections before placing an order.
+Customers should measure finished outside width and height to the nearest 1/8 inch and verify all measurements, frame choices and hardware selections before placing an order.
 
-## Canonical public page
-https://screens.helpful.place/
+## Public pages
+- Main ordering page: https://screens.helpful.place/
+- Window screens: https://screens.helpful.place/window-screens-las-vegas
+- Patio screen doors: https://screens.helpful.place/patio-screen-doors-las-vegas
+- Screen materials: https://screens.helpful.place/screen-materials
+- Window measurement guide: https://screens.helpful.place/how-to-measure-window-screen
+- Patio-door measurement guide: https://screens.helpful.place/how-to-measure-patio-screen-door
+- Las Vegas Valley service area: https://screens.helpful.place/las-vegas-valley-service-area
 
 ## Main company website
 https://www.helpful.place/
