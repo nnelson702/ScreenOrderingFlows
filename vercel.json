@@ -14,5 +14,27 @@
       "source": "/quote",
       "destination": "/quote.html"
     }
+  ],
+  "headers": [
+    {
+      "source": "/staff",
+      "headers": [{"key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive"}]
+    },
+    {
+      "source": "/staff.html",
+      "headers": [{"key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive"}]
+    },
+    {
+      "source": "/quote",
+      "headers": [{"key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive"}]
+    },
+    {
+      "source": "/quote.html",
+      "headers": [{"key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive"}]
+    },
+    {
+      "source": "/api/:path*",
+      "headers": [{"key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive"}]
+    }
   ]
 }
