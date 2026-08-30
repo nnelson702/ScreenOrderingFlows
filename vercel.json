@@ -3,6 +3,10 @@
   "trailingSlash": false,
   "rewrites": [
     {
+      "source": "/api/health",
+      "destination": "https://screen-ordering-api.nnelson.workers.dev/health"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://screen-ordering-api.nnelson.workers.dev/api/:path*"
     },
