@@ -13,6 +13,9 @@ Helpful ACE, operated by Skye Bridge LLC, provides an online quoting and orderin
 - Patio-door frame, roller, handle orientation and handle-height configuration
 - Local Helpful ACE pickup and eligible local delivery options
 
+## Real pricing example
+A 36 inch wide by 30 inch high replacement window screen using standard fiberglass mesh and an eligible standard frame profile prices at $34.98 before applicable sales tax in the current Helpful ACE ordering tool. The example includes a complete new frame, standard fiberglass mesh and up to 6 standard window-screen hardware pieces at no added charge. Final pricing varies by dimensions, frame profile and material selection.
+
 ## Screen materials currently represented in the ordering tool
 - Fiberglass
 - Aluminum
@@ -35,6 +38,7 @@ Customers should measure finished outside width and height to the nearest 1/8 in
 ## Public pages
 - Main ordering page: https://screens.helpful.place/
 - Window screens: https://screens.helpful.place/window-screens-las-vegas
+- Window screen pricing: https://screens.helpful.place/window-screen-pricing-las-vegas
 - Patio screen doors: https://screens.helpful.place/patio-screen-doors-las-vegas
 - Screen materials: https://screens.helpful.place/screen-materials
 - Window measurement guide: https://screens.helpful.place/how-to-measure-window-screen
